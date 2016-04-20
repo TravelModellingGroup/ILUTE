@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Interface Name="TMG.Ilute.VehicleTransaction.IPickDriverForVehicle">
+    <Position X="2.25" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\VehicleTransaction\IPickDriverForVehicle.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="TMG.Ilute.VehicleTransaction.IPickOwnerForVehicle">
+    <Position X="5.75" Y="2.25" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\VehicleTransaction\IPickOwnerForVehicle.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="TMG.Ilute.VehicleTransaction.IVehicleInitialization">
+    <Position X="7.75" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\VehicleTransaction\IVehicleInitialization.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="TMG.Ilute.VehicleTransaction.IVehicleUtilityCalculator">
+    <Position X="9.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\VehicleTransaction\IVehicleUtilityCalculator.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="TMG.Ilute.VehicleTransaction.IVehicleTransationModel">
+    <Position X="4" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Interfaces\VehicleTransaction\IVehicleTransationModel.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
