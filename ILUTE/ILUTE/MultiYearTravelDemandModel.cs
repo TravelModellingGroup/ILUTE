@@ -29,6 +29,7 @@ namespace TMG.Ilute
     [ModuleInformation(Description = "This is the base model system template for Ilute.")]
     public class MultiYearTravelDemandModel : ITravelDemandModel, IResourceSource
     {
+        [RunParameter("Input Base Directory", "../../Input", "The directory were the input files are located.")]
         public string InputBaseDirectory { get; set; }
 
         public string Name { get; set; }
@@ -40,8 +41,10 @@ namespace TMG.Ilute
 
         private volatile bool _Exit = false;
 
+        [RunParameter("Start Year", 1986, "The first year of the simulation.")]
         public int StartYear;
 
+        [RunParameter("Number of Years", 20, "The number of years to execute for.")]
         public int NumberOfYears;
 
         public float Progress { get; set; }
