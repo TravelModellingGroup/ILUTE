@@ -86,5 +86,21 @@ namespace TMG.Ilute.Data
 #endif
             return ret;
         }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            ListLock.EnterReadLock();
+            try
+            {
+                foreach (var data in DataList)
+                {
+                    yield return data;
+                }
+            }
+            finally
+            {
+                ListLock.ExitReadLock();
+            }
+        }
     }
 }

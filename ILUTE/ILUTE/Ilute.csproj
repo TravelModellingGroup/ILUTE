@@ -53,10 +53,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Data\FamilyRepository.cs" />
-    <Compile Include="Data\HouseholdRepository.cs" />
+    <Compile Include="Data\Date.cs" />
+    <Compile Include="Data\Repositories\FamilyRepository.cs" />
+    <Compile Include="Data\Repositories\HouseholdRepository.cs" />
     <Compile Include="Data\IndexedObject.cs" />
-    <Compile Include="Data\PersonRepository.cs" />
+    <Compile Include="Data\Repositories\VehicleRepository.cs" />
+    <Compile Include="Data\Repositories\PersonRepository.cs" />
     <Compile Include="Data\Repository.cs" />
     <Compile Include="Data\Demographics\Family.cs" />
     <Compile Include="Data\Demographics\Household.cs" />

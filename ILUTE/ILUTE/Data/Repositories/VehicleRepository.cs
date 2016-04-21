@@ -25,9 +25,9 @@ using TMG.Ilute.Data.Demographics;
 using System.Threading;
 using XTMF;
 
-namespace TMG.Ilute.Data
+namespace TMG.Ilute.Data.Repositories
 {
-    public class PersonRepository : Repository<Person>, IDataSource<PersonRepository>
+    public class VehicleRepository : Repository<Vehicle>, IDataSource<VehicleRepository>
     {
         public bool Loaded
         {
@@ -56,7 +56,7 @@ namespace TMG.Ilute.Data
             }
         }
 
-        public PersonRepository GiveData()
+        public VehicleRepository GiveData()
         {
             return this;
         }

@@ -21,58 +21,58 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TMG.Ilute.Data.Repositories;
+using TMG.Ilute.Data.Demographics;
 using XTMF;
 
-
-namespace TMG.Ilute.Model.Demographic
+namespace TMG.Ilute.Data.Repositories
 {
-
-    public class AgePopulation : IExecuteYearly
+    public class HouseholdRepository : Repository<Household>, IDataSource<HouseholdRepository>
     {
-
-        public string Name { get; set; }
-
-        public float Progress { get; set; }
-
-        public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
-
-        public IResource PersonRepository;
-
-        public void AfterYearlyExecute(int year)
+        public bool Loaded
         {
-
-        }
-
-        public void BeforeFirstYear(int firstYear)
-        {
-        }
-
-        public void BeforeYearlyExecute(int year)
-        {
-        }
-
-        public void Execute(int year)
-        {
-            var repo = PersonRepository.AcquireResource<PersonRepository>();
-            foreach(var person in repo)
+            get
             {
-                person.Age += 1;
+                return true;
             }
         }
 
-        public void RunFinished(int finalYear)
+        public string Name { get; set; }
+
+
+        public float Progress
         {
+            get
+            {
+                return 0f;
+            }
+        }
+
+        public Tuple<byte, byte, byte> ProgressColour
+        {
+            get
+            {
+                return new Tuple<byte, byte, byte>(50, 150, 50);
+            }
+        }
+
+        public HouseholdRepository GiveData()
+        {
+            return this;
+        }
+
+        public void LoadData()
+        {
+            // nothing to do
         }
 
         public bool RuntimeValidation(ref string error)
         {
-            if (!PersonRepository.CheckResourceType<PersonRepository>())
-            {
-                error = "In '" + Name + "' the person repository was not of type PersonRepository!";
-                return false;
-            }
             return true;
+        }
+
+        public void UnloadData()
+        {
+            // nothing to do
         }
     }
 }

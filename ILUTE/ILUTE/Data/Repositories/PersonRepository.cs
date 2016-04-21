@@ -22,11 +22,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TMG.Ilute.Data.Demographics;
+using System.Threading;
 using XTMF;
 
-namespace TMG.Ilute.Data
+namespace TMG.Ilute.Data.Repositories
 {
-    public class HouseholdRepository : Repository<Household>, IDataSource<HouseholdRepository>
+    public class PersonRepository : Repository<Person>, IDataSource<PersonRepository>
     {
         public bool Loaded
         {
@@ -55,7 +56,7 @@ namespace TMG.Ilute.Data
             }
         }
 
-        public HouseholdRepository GiveData()
+        public PersonRepository GiveData()
         {
             return this;
         }

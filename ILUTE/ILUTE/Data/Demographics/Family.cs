@@ -25,5 +25,6 @@ namespace TMG.Ilute.Data.Demographics
 {
     public class Family : IndexedObject
     {
+        public List<int> Persons = new List<int>(4);
     }
 }

@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 using TMG.Ilute.Data.Demographics;
 using XTMF;
 
-namespace TMG.Ilute.Data
+namespace TMG.Ilute.Data.Repositories
 {
     public class FamilyRepository : Repository<Family>, IDataSource<FamilyRepository>
     {

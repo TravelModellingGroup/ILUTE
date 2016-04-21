@@ -25,5 +25,6 @@ namespace TMG.Ilute.Data.Demographics
 {
     public class Person : IndexedObject
     {
+        public int Age { get; set; }
     }
 }
