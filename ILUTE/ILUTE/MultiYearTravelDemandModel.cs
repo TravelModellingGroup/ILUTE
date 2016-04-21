@@ -96,12 +96,28 @@ namespace TMG.Ilute
             {
                 PreRun[i].Start();
             }
+            foreach (var model in RunYearly)
+            {
+                model.BeforeFirstYear(StartYear);
+            }
             for (int year = 0; year < NumberOfYears && !_Exit; year++)
             {
                 for (int i = 0; i < RunYearly.Length && !_Exit; i++)
                 {
+                    RunYearly[i].BeforeYearlyExecute(StartYear + year);
+                }
+                for (int i = 0; i < RunYearly.Length && !_Exit; i++)
+                {
                     RunYearly[i].Execute(StartYear + year);
                 }
+                for (int i = 0; i < RunYearly.Length && !_Exit; i++)
+                {
+                    RunYearly[i].AfterYearlyExecute(StartYear + year);
+                }
+            }
+            foreach (var model in RunYearly)
+            {
+                model.RunFinished(StartYear + NumberOfYears - 1);
             }
             for (int i = 0; i < PostRun.Length; i++)
             {

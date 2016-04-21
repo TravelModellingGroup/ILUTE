@@ -62,6 +62,7 @@
     <Compile Include="Data\Repository.cs" />
     <Compile Include="Data\Demographics\Family.cs" />
     <Compile Include="Data\Demographics\Household.cs" />
+    <Compile Include="ExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteYearly.cs" />
     <Compile Include="Model\Demographic\AgePopulation.cs" />
