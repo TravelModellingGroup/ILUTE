@@ -26,6 +26,7 @@ using XTMF;
 
 namespace TMG.Ilute
 {
+    [ModuleInformation(Description = "This is the base model system template for Ilute.")]
     public class MultiYearTravelDemandModel : ITravelDemandModel, IResourceSource
     {
         public string InputBaseDirectory { get; set; }
@@ -71,17 +72,31 @@ namespace TMG.Ilute
             return true;
         }
 
+        [SubModelInformation(Description = "Execute before the main model run")]
+        public ISelfContainedModule[] PreRun;
+
         [SubModelInformation(Description = "Models that get run every year")]
         public IExecuteYearly[] RunYearly;
 
+        [SubModelInformation(Description = "Execute after the main model run")]
+        public ISelfContainedModule[] PostRun;
+
         public void Start()
         {
+            for (int i = 0; i < PreRun.Length; i++)
+            {
+                PreRun[i].Start();
+            }
             for (int year = 0; year < NumberOfYears && !_Exit; year++)
             {
                 for (int i = 0; i < RunYearly.Length && !_Exit; i++)
                 {
                     RunYearly[i].Execute(StartYear + year);
                 }
+            }
+            for (int i = 0; i < PostRun.Length; i++)
+            {
+                PostRun[i].Start();
             }
         }
     }

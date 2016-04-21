@@ -17,6 +17,7 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -87,20 +88,53 @@ namespace TMG.Ilute.Data
             return ret;
         }
 
-        public IEnumerator<T> GetEnumerator()
+        public struct RepositoryEnumerator : IEnumerator<T>
         {
-            ListLock.EnterReadLock();
-            try
+            private readonly List<T> Data;
+            private readonly int Length;
+            private readonly Repository<T> Repo;
+            private int Index;
+
+            public RepositoryEnumerator(Repository<T> repo)
             {
-                foreach (var data in DataList)
-                {
-                    yield return data;
-                }
+                Repo = repo;
+                Data = repo.DataList;
+                Length = Data.Count;
+                Index = 0;
+                repo.ListLock.EnterReadLock();
             }
-            finally
+
+            public T Current
             {
-                ListLock.ExitReadLock();
+                get { return Data[Index]; }
             }
+
+            object IEnumerator.Current
+            {
+                get { return Data[Index]; }
+            }
+
+            public bool MoveNext()
+            {
+                return (++Index < Length);
+            }
+
+            public void Reset()
+            {
+                Index = 0;
+            }
+
+            public void Dispose()
+            {
+                Repo.ListLock.ExitReadLock();
+            }
+
+
+        }
+
+        public RepositoryEnumerator GetEnumerator()
+        {
+            return new RepositoryEnumerator(this);
         }
     }
 }
