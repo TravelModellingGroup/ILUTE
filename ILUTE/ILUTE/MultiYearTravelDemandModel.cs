@@ -63,15 +63,21 @@ namespace TMG.Ilute
 
         [SubModelInformation(Description = "Model Data Storage")]
         public List<IResource> Resources { get; set; }
-        
+
 
         public bool ExitRequest()
         {
+            _Exit = true;
             return true;
         }
 
         public bool RuntimeValidation(ref string error)
         {
+            if (NumberOfYears <= 0)
+            {
+                error = "In '" + Name + "' the number of years to execute the model for must be greater than zero!";
+                return false;
+            }
             return true;
         }
 
