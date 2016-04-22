@@ -23,8 +23,13 @@ using System.Text;
 
 namespace TMG.Ilute.Data.Demographics
 {
-    public class Household : IndexedObject
+    public sealed class Household : IndexedObject
     {
-        public List<int> Families = new List<int>();
+        public List<int> Families { get; private set; }
+
+        public Household()
+        {
+            Families = new List<int>(1);
+        }        
     }
 }

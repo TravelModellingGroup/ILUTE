@@ -27,9 +27,12 @@ using XTMF;
 
 namespace TMG.Ilute.Model.Demographic
 {
-
+    [ModuleInformation(Description = "This module will increase the age of the population by one.  Deceased persons are also aged unless specified otherwise.")]
     public class AgePopulation : IExecuteYearly
     {
+        [RunParameter("Increase Age of Deceased", true, "If this is false a person will not age after they die.")]
+        public bool IncreaseAgeOfDeceased;
+
 
         public string Name { get; set; }
 
@@ -55,9 +58,22 @@ namespace TMG.Ilute.Model.Demographic
         public void Execute(int year)
         {
             var repo = PersonRepository.AcquireResource<PersonRepository>();
-            foreach(var person in repo)
+            if (IncreaseAgeOfDeceased)
             {
-                person.Age += 1;
+                foreach (var person in repo)
+                {
+                    person.Age += 1;
+                }
+            }
+            else
+            {
+                foreach (var person in repo)
+                {
+                    if (person.Living)
+                    {
+                        person.Age += 1;
+                    }
+                }
             }
         }
 

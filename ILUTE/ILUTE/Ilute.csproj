@@ -81,6 +81,7 @@
     <Folder Include="Data\Firmology\" />
     <Folder Include="Data\LabourForce\" />
     <Folder Include="Data\Spatial\" />
+    <Folder Include="Model\Utilities\" />
     <Folder Include="VehicleTransaction\" />
   </ItemGroup>
   <ItemGroup>

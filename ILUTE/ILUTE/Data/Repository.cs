@@ -28,11 +28,75 @@ using XTMF;
 namespace TMG.Ilute.Data
 {
     /// <summary>
+    /// A higher level abstraction for Repository in order to
+    /// allow us to have dependent repositories
+    /// </summary>
+    public abstract class Repository
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        internal abstract void MakeNew();
+    }
+
+    /// <summary>
     /// This class is designed to facilitate the creation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class Repository<T> where T : IndexedObject
+    public abstract class Repository<T,K> : Repository, IDataSource<K>
+        where T : IndexedObject
+        where K : Repository<T,K>
     {
+        public bool Loaded { get; private set; }
+        
+        public string Name { get; set; }
+
+
+        public float Progress
+        {
+            get
+            {
+                return 0f;
+            }
+        }
+
+        public Tuple<byte, byte, byte> ProgressColour
+        {
+            get
+            {
+                return new Tuple<byte, byte, byte>(50, 150, 50);
+            }
+        }
+
+        public void LoadData()
+        {
+            Dependents = DependentResources.Select(repository => repository.AcquireResource<Repository>()).ToArray();
+            Loaded = true;
+        }
+
+        public K GiveData()
+        {
+            return (K)this;
+        }
+
+        public bool RuntimeValidation(ref string error)
+        {
+            return true;
+        }
+
+        public void UnloadData()
+        {
+            // nothing to do
+        }
+
+        [SubModelInformation(Description = "Repositories that need to increase when data is added to this repository.")]
+        public IResource[] DependentResources;
+
+        /// <summary>
+        /// A list of repositories that need to update when this repository is added to
+        /// </summary>
+        private Repository[] Dependents;
+
         /// <summary>
         /// This is used before accessing the DataList
         /// </summary>
@@ -56,8 +120,39 @@ namespace TMG.Ilute.Data
             DataList.Add(data);
             data.Id = index;
             Thread.MemoryBarrier();
+            for (int i = 0; i < Dependents.Length; i++)
+            {
+                Dependents[i].MakeNew();
+            }
             ListLock.ExitWriteLock();
             return index;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="index"></param>
+        public void SetByID(T data, int index)
+        {
+            DataList[index] = data;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        override internal void MakeNew()
+        {
+            var data = default(T);
+            ListLock.EnterWriteLock();
+            Thread.MemoryBarrier();
+            DataList.Add(data);
+            Thread.MemoryBarrier();
+            for (int i = 0; i < Dependents.Length; i++)
+            {
+                Dependents[i].MakeNew();
+            }
+            ListLock.ExitWriteLock();
         }
 
         /// <summary>
@@ -92,10 +187,10 @@ namespace TMG.Ilute.Data
         {
             private readonly List<T> Data;
             private readonly int Length;
-            private readonly Repository<T> Repo;
+            private readonly Repository<T, K> Repo;
             private int Index;
 
-            public RepositoryEnumerator(Repository<T> repo)
+            public RepositoryEnumerator(Repository<T, K> repo)
             {
                 Repo = repo;
                 Data = repo.DataList;
@@ -128,8 +223,6 @@ namespace TMG.Ilute.Data
             {
                 Repo.ListLock.ExitReadLock();
             }
-
-
         }
 
         public RepositoryEnumerator GetEnumerator()

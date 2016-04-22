@@ -26,53 +26,8 @@ using XTMF;
 
 namespace TMG.Ilute.Data.Repositories
 {
-    public class FamilyRepository : Repository<Family>, IDataSource<FamilyRepository>
+    public class FamilyRepository : Repository<Family, FamilyRepository>
     {
-        public bool Loaded
-        {
-            get
-            {
-                return true;
-            }
-        }
 
-        public string Name { get; set; }
-
-
-        public float Progress
-        {
-            get
-            {
-                return 0f;
-            }
-        }
-
-        public Tuple<byte, byte, byte> ProgressColour
-        {
-            get
-            {
-                return new Tuple<byte, byte, byte>(50, 150, 50);
-            }
-        }
-
-        public FamilyRepository GiveData()
-        {
-            return this;
-        }
-
-        public void LoadData()
-        {
-            // nothing to do
-        }
-
-        public bool RuntimeValidation(ref string error)
-        {
-            return true;
-        }
-
-        public void UnloadData()
-        {
-            // nothing to do
-        }
     }
 }

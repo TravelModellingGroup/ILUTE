@@ -23,8 +23,31 @@ using System.Text;
 
 namespace TMG.Ilute.Data.Demographics
 {
-    public class Person : IndexedObject
+    public sealed class Person : IndexedObject
     {
+        public List<int> Children { get; private set; }
+
+        public List<int> Siblings { get; private set; }
+
         public int Age { get; set; }
+
+        public int Father { get; private set; }
+
+        public int Mother { get; private set; }
+
+        public int Spouse { get; set; }
+
+        public int Family { get; set; }
+
+        public int Household { get; set; }
+
+        public bool Living { get; set; }
+
+        public Person()
+        {
+            Living = true;
+            Children = new List<int>(4);
+            Siblings = new List<int>(4);
+        }
     }
 }
