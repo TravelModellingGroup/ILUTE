@@ -34,7 +34,7 @@ namespace TMG.Ilute.Data
     public abstract class Repository
     {
         /// <summary>
-        /// 
+        /// Call this to let dependences know that
         /// </summary>
         internal abstract void MakeNew();
     }
@@ -43,12 +43,12 @@ namespace TMG.Ilute.Data
     /// This class is designed to facilitate the creation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class Repository<T,K> : Repository, IDataSource<K>
+    public abstract class Repository<T, K> : Repository, IDataSource<K>
         where T : IndexedObject
-        where K : Repository<T,K>
+        where K : Repository<T, K>
     {
         public bool Loaded { get; private set; }
-        
+
         public string Name { get; set; }
 
 
@@ -92,6 +92,15 @@ namespace TMG.Ilute.Data
             Loaded = false;
             Thread.MemoryBarrier();
             ListLock.ExitWriteLock();
+        }
+
+        /// <summary>
+        /// Initialize a new object of the repository's type
+        /// </summary>
+        /// <returns></returns>
+        protected virtual T Initialize(int id)
+        {
+            return null;
         }
 
         [SubModelInformation(Description = "Repositories that need to increase when data is added to this repository.")]
@@ -146,35 +155,23 @@ namespace TMG.Ilute.Data
         /// <summary>
         /// 
         /// </summary>
-        override internal void MakeNew()
+        sealed override internal void MakeNew()
         {
-            var data = default(T);
+            ListLock.EnterWriteLock();
+            Thread.MemoryBarrier();
+            var index = DataList.Count;
+            var data = Initialize(index);
             if (data != null)
             {
-                ListLock.EnterWriteLock();
-                Thread.MemoryBarrier();
-                data.Id = DataList.Count;
-                DataList.Add(data);
-                Thread.MemoryBarrier();
-                for (int i = 0; i < Dependents.Length; i++)
-                {
-                    Dependents[i].MakeNew();
-                }
-                ListLock.ExitWriteLock();
+                data.Id = index;
             }
-            else
+            DataList.Add(data);
+            Thread.MemoryBarrier();
+            for (int i = 0; i < Dependents.Length; i++)
             {
-                // just add a null for now
-                ListLock.EnterWriteLock();
-                Thread.MemoryBarrier();
-                DataList.Add(data);
-                Thread.MemoryBarrier();
-                for (int i = 0; i < Dependents.Length; i++)
-                {
-                    Dependents[i].MakeNew();
-                }
-                ListLock.ExitWriteLock();
+                Dependents[i].MakeNew();
             }
+            ListLock.ExitWriteLock();
         }
 
         /// <summary>
@@ -252,7 +249,7 @@ namespace TMG.Ilute.Data
             private readonly Repository<T, K> Repo;
             private readonly List<T> Data;
             public readonly int Length;
-            public MultipleAccessContext(Repository<T,K> repo)
+            public MultipleAccessContext(Repository<T, K> repo)
             {
                 Repo = repo;
                 Data = repo.DataList;

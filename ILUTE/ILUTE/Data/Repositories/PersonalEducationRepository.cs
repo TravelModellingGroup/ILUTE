@@ -29,6 +29,9 @@ namespace TMG.Ilute.Data.Repositories
 {
     public class PersonalEducationRepository : Repository<PersonalEducation, PersonalEducationRepository>
     {
-     
+        protected override PersonalEducation Initialize(int id)
+        {
+            return new PersonalEducation() { CurrentlyUndertaking = EducationLevels.None, LastCompleted = EducationLevels.None };
+        }
     }
 }
