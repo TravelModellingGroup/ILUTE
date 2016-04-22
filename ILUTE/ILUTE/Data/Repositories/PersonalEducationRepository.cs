@@ -27,6 +27,7 @@ using TMG.Ilute.Data.Demographics.Education;
 
 namespace TMG.Ilute.Data.Repositories
 {
+    [ModuleInformation(Description = "Provides the educational information for persons.  This should be dependent upon the person repository.")]
     public class PersonalEducationRepository : Repository<PersonalEducation, PersonalEducationRepository>
     {
         protected override PersonalEducation Initialize(int id)
