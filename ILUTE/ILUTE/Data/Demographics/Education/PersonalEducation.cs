@@ -20,29 +20,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace TMG.Ilute.Data
+namespace TMG.Ilute.Data.Demographics.Education
 {
-    public class Vehicle : IndexedObject
+    /// <summary>
+    /// This class holds the data for a person's educational status
+    /// </summary>
+    public class PersonalEducation : IndexedObject
     {
-        /// <summary>
-        /// The person who owns the vehicle
-        /// </summary>
-        public int Owner { get; set; }
+        public int Person { get; set; }
 
-        /// <summary>
-        /// The primary driver of this vehicle
-        /// </summary>
-        public int Driver { get; set; }
+        public EducationLevels LastCompleted { get; set; }
 
-        /// <summary>
-        /// The age of the vehicle
-        /// </summary>
-        public int Age { get; set; }
+        public EducationLevels CurrentlyUndertaking { get; set; }
 
-        /// <summary>
-        /// The year it was last purchased
-        /// </summary>
-        public int YearPurchased { get; set; }
     }
 }

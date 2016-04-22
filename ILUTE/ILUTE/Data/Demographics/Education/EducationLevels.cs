@@ -20,29 +20,30 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace TMG.Ilute.Data
+namespace TMG.Ilute.Data.Demographics.Education
 {
-    public class Vehicle : IndexedObject
+    public enum EducationLevels
     {
-        /// <summary>
-        /// The person who owns the vehicle
-        /// </summary>
-        public int Owner { get; set; }
-
-        /// <summary>
-        /// The primary driver of this vehicle
-        /// </summary>
-        public int Driver { get; set; }
-
-        /// <summary>
-        /// The age of the vehicle
-        /// </summary>
-        public int Age { get; set; }
-
-        /// <summary>
-        /// The year it was last purchased
-        /// </summary>
-        public int YearPurchased { get; set; }
+        None,
+        Kindergarten,
+        Elementary,
+        Highschool,
+        HighschoolGrad,
+        TradesSchool,   // [FBC] August 16, 2012
+                        // For post-secondary education, keep the format of trade school, trade school grad; 
+                        // college, college grad etc. and keep the non-graduated version odd,
+                        // since the StillInSchool method evaluates whether someone is in school by checking if the
+                        // integer associated with the education is odd
+        TradesSchoolGrad,
+        College,
+        CollegeGrad,
+        UnivCertificate,
+        CompletedUnivCertificate,
+        Undergrad,
+        CompletedUndergrad,
+        GraduateDeg,
+        CompletedGraduateDeg
     }
 }

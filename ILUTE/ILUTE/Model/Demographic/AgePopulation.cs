@@ -58,20 +58,24 @@ namespace TMG.Ilute.Model.Demographic
         public void Execute(int year)
         {
             var repo = PersonRepository.AcquireResource<PersonRepository>();
-            if (IncreaseAgeOfDeceased)
+            using (var people = repo.GetMultiAccessContext())
             {
-                foreach (var person in repo)
+                if (IncreaseAgeOfDeceased)
                 {
-                    person.Age += 1;
-                }
-            }
-            else
-            {
-                foreach (var person in repo)
-                {
-                    if (person.Living)
+                    for (int i = 0; i < people.Length; i++)
                     {
-                        person.Age += 1;
+                        people[i].Age++;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < people.Length; i++)
+                    {
+                        var person = people[i];
+                        if (person.Living)
+                        {
+                            person.Age++;
+                        }
                     }
                 }
             }

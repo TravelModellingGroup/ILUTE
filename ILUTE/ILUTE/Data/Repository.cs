@@ -86,7 +86,12 @@ namespace TMG.Ilute.Data
 
         public void UnloadData()
         {
-            // nothing to do
+            ListLock.EnterWriteLock();
+            Thread.MemoryBarrier();
+            DataList.Clear();
+            Loaded = false;
+            Thread.MemoryBarrier();
+            ListLock.ExitWriteLock();
         }
 
         [SubModelInformation(Description = "Repositories that need to increase when data is added to this repository.")]
@@ -144,15 +149,32 @@ namespace TMG.Ilute.Data
         override internal void MakeNew()
         {
             var data = default(T);
-            ListLock.EnterWriteLock();
-            Thread.MemoryBarrier();
-            DataList.Add(data);
-            Thread.MemoryBarrier();
-            for (int i = 0; i < Dependents.Length; i++)
+            if (data != null)
             {
-                Dependents[i].MakeNew();
+                ListLock.EnterWriteLock();
+                Thread.MemoryBarrier();
+                data.Id = DataList.Count;
+                DataList.Add(data);
+                Thread.MemoryBarrier();
+                for (int i = 0; i < Dependents.Length; i++)
+                {
+                    Dependents[i].MakeNew();
+                }
+                ListLock.ExitWriteLock();
             }
-            ListLock.ExitWriteLock();
+            else
+            {
+                // just add a null for now
+                ListLock.EnterWriteLock();
+                Thread.MemoryBarrier();
+                DataList.Add(data);
+                Thread.MemoryBarrier();
+                for (int i = 0; i < Dependents.Length; i++)
+                {
+                    Dependents[i].MakeNew();
+                }
+                ListLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -223,6 +245,44 @@ namespace TMG.Ilute.Data
             {
                 Repo.ListLock.ExitReadLock();
             }
+        }
+
+        public struct MultipleAccessContext : IDisposable
+        {
+            private readonly Repository<T, K> Repo;
+            private readonly List<T> Data;
+            public readonly int Length;
+            public MultipleAccessContext(Repository<T,K> repo)
+            {
+                Repo = repo;
+                Data = repo.DataList;
+                Repo.ListLock.EnterReadLock();
+                Thread.MemoryBarrier();
+                Length = Data.Count;
+            }
+
+            public T this[int i]
+            {
+                get
+                {
+                    return Data[i];
+                }
+                set
+                {
+                    Data[i] = value;
+                }
+            }
+
+            public void Dispose()
+            {
+                Thread.MemoryBarrier();
+                Repo.ListLock.ExitReadLock();
+            }
+        }
+
+        public MultipleAccessContext GetMultiAccessContext()
+        {
+            return new MultipleAccessContext(this);
         }
 
         public RepositoryEnumerator GetEnumerator()

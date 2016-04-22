@@ -20,29 +20,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using System.Threading;
+using XTMF;
+using TMG.Ilute.Data.Demographics.Education;
 
-namespace TMG.Ilute.Data
+namespace TMG.Ilute.Data.Repositories
 {
-    public class Vehicle : IndexedObject
+    public class PersonalEducationRepository : Repository<PersonalEducation, PersonalEducationRepository>
     {
-        /// <summary>
-        /// The person who owns the vehicle
-        /// </summary>
-        public int Owner { get; set; }
-
-        /// <summary>
-        /// The primary driver of this vehicle
-        /// </summary>
-        public int Driver { get; set; }
-
-        /// <summary>
-        /// The age of the vehicle
-        /// </summary>
-        public int Age { get; set; }
-
-        /// <summary>
-        /// The year it was last purchased
-        /// </summary>
-        public int YearPurchased { get; set; }
+     
     }
 }
