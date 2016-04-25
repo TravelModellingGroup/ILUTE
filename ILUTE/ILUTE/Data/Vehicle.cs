@@ -23,6 +23,9 @@ using System.Text;
 
 namespace TMG.Ilute.Data
 {
+    /// <summary>
+    /// Contains basic information about the vehicle
+    /// </summary>
     public class Vehicle : IndexedObject
     {
         /// <summary>
@@ -44,5 +47,25 @@ namespace TMG.Ilute.Data
         /// The year it was last purchased
         /// </summary>
         public int YearPurchased { get; set; }
+
+        /// <summary>
+        /// Weight in metric tons
+        /// </summary>
+        public float Weight { get; set; }
+
+        /// <summary>
+        /// In litres/100km
+        /// </summary>
+        public float FuelIntensity { get; set; }
+
+        /// <summary>
+        /// In Metres
+        /// </summary>
+        public float Wheelbase { get; set; }
+
+        /// <summary>
+        /// In M^3
+        /// </summary>
+        public float LuggageCapacity { get; set; }
     }
 }

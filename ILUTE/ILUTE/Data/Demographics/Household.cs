@@ -27,6 +27,11 @@ namespace TMG.Ilute.Data.Demographics
     {
         public List<int> Families { get; private set; }
 
+        /// <summary>
+        /// The Dwelling the household lives in
+        /// </summary>
+        public int Dwelling { get; set; }
+
         public Household()
         {
             Families = new List<int>(1);
