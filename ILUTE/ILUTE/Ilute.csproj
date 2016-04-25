@@ -56,6 +56,7 @@
     <Compile Include="Data\Date.cs" />
     <Compile Include="Data\Demographics\Education\EducationLevels.cs" />
     <Compile Include="Data\Demographics\Education\PersonalEducation.cs" />
+    <Compile Include="Data\LabourForce\Job.cs" />
     <Compile Include="Data\Repositories\FamilyRepository.cs" />
     <Compile Include="Data\Repositories\HouseholdRepository.cs" />
     <Compile Include="Data\IndexedObject.cs" />
@@ -70,6 +71,7 @@
     <Compile Include="Interfaces\IExecuteYearly.cs" />
     <Compile Include="Model\Demographic\AgePopulation.cs" />
     <Compile Include="Model\Rand.cs" />
+    <Compile Include="Model\Utilities\CurrencyManager.cs" />
     <Compile Include="MultiYearTravelDemandModel.cs" />
     <Compile Include="Data\Demographics\Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -83,9 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Data\Firmology\" />
-    <Folder Include="Data\LabourForce\" />
     <Folder Include="Data\Spatial\" />
-    <Folder Include="Model\Utilities\" />
     <Folder Include="VehicleTransaction\" />
   </ItemGroup>
   <ItemGroup>

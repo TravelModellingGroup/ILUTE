@@ -22,24 +22,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TMG.Ilute.Data
+namespace TMG.Ilute.Data.LabourForce
 {
-    public struct Money
+    public class Job : IndexedObject
     {
-        /// <summary>
-        /// The time that this amount is money is from
-        /// </summary>
-        public Date WhenCreated { get; private set; }
+        Date StartDate { get; set; }
+
+        Money Salary { get; set; }
+
+        public int WorkExperienceRequired { get; set; }
+
+        public int Owner { get; set; }
 
         /// <summary>
-        /// The amount of money from the given year
+        /// TODO: Set this to some enumeration?
         /// </summary>
-        public float Amount { get; private set; }
+        public int OccupationClassification { get; set; }
 
-        public Money(float amount, Date currentYear)
-        {
-            WhenCreated = currentYear;
-            Amount = amount;
-        }
+        /// <summary>
+        /// TODO: Set this to some enumeration?
+        /// </summary>
+        public int IndustryClassification { get; set; }
     }
 }
