@@ -57,12 +57,7 @@
     <Compile Include="Data\Demographics\Education\EducationLevels.cs" />
     <Compile Include="Data\Demographics\Education\PersonalEducation.cs" />
     <Compile Include="Data\LabourForce\Job.cs" />
-    <Compile Include="Data\Repositories\FamilyRepository.cs" />
-    <Compile Include="Data\Repositories\HouseholdRepository.cs" />
     <Compile Include="Data\IndexedObject.cs" />
-    <Compile Include="Data\Repositories\PersonalEducationRepository.cs" />
-    <Compile Include="Data\Repositories\VehicleRepository.cs" />
-    <Compile Include="Data\Repositories\PersonRepository.cs" />
     <Compile Include="Data\Repository.cs" />
     <Compile Include="Data\Demographics\Family.cs" />
     <Compile Include="Data\Demographics\Household.cs" />

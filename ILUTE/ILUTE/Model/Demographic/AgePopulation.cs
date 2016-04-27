@@ -21,7 +21,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TMG.Ilute.Data.Repositories;
+using TMG.Ilute.Data;
+using TMG.Ilute.Data.Demographics;
 using XTMF;
 
 
@@ -42,6 +43,8 @@ namespace TMG.Ilute.Model.Demographic
 
         public IResource PersonRepository;
 
+        public Repository<Person> TestRepo;
+
         public void AfterYearlyExecute(int year)
         {
 
@@ -57,7 +60,7 @@ namespace TMG.Ilute.Model.Demographic
 
         public void Execute(int year)
         {
-            var repo = PersonRepository.AcquireResource<PersonRepository>();
+            var repo = PersonRepository.AcquireResource<Repository<Person>>();
             using (var people = repo.GetMultiAccessContext())
             {
                 if (IncreaseAgeOfDeceased)
@@ -87,7 +90,7 @@ namespace TMG.Ilute.Model.Demographic
 
         public bool RuntimeValidation(ref string error)
         {
-            if (!PersonRepository.CheckResourceType<PersonRepository>())
+            if (!PersonRepository.CheckResourceType<Repository<Person>>())
             {
                 error = "In '" + Name + "' the person repository was not of type PersonRepository!";
                 return false;

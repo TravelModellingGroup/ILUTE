@@ -43,14 +43,13 @@ namespace TMG.Ilute.Data
     /// This class is designed to facilitate the creation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class Repository<T, K> : Repository, IDataSource<K>
+    public sealed class Repository<T> : Repository, IDataSource<Repository<T>>
         where T : IndexedObject
-        where K : Repository<T, K>
     {
+
         public bool Loaded { get; private set; }
 
         public string Name { get; set; }
-
 
         public float Progress
         {
@@ -74,9 +73,9 @@ namespace TMG.Ilute.Data
             Loaded = true;
         }
 
-        public K GiveData()
+        public Repository<T> GiveData()
         {
-            return (K)this;
+            return this;
         }
 
         public bool RuntimeValidation(ref string error)
@@ -94,15 +93,6 @@ namespace TMG.Ilute.Data
             ListLock.ExitWriteLock();
         }
 
-        /// <summary>
-        /// Initialize a new object of the repository's type
-        /// </summary>
-        /// <returns></returns>
-        protected virtual T Initialize(int id)
-        {
-            return null;
-        }
-
         [SubModelInformation(Description = "Repositories that need to increase when data is added to this repository.")]
         public IResource[] DependentResources;
 
@@ -114,12 +104,12 @@ namespace TMG.Ilute.Data
         /// <summary>
         /// This is used before accessing the DataList
         /// </summary>
-        protected ReaderWriterLockSlim ListLock = new ReaderWriterLockSlim();
+        private ReaderWriterLockSlim ListLock = new ReaderWriterLockSlim();
 
         /// <summary>
         /// The data storage, get the ListLock before accessing
         /// </summary>
-        protected List<T> DataList = new List<T>();
+        private List<T> DataList = new List<T>();
 
         /// <summary>
         /// Add a new entry
@@ -160,7 +150,7 @@ namespace TMG.Ilute.Data
             ListLock.EnterWriteLock();
             Thread.MemoryBarrier();
             var index = DataList.Count;
-            var data = Initialize(index);
+            var data = default(T);
             if (data != null)
             {
                 data.Id = index;
@@ -206,10 +196,10 @@ namespace TMG.Ilute.Data
         {
             private readonly List<T> Data;
             private readonly int Length;
-            private readonly Repository<T, K> Repo;
+            private readonly Repository<T> Repo;
             private int Index;
 
-            public RepositoryEnumerator(Repository<T, K> repo)
+            public RepositoryEnumerator(Repository<T> repo)
             {
                 Repo = repo;
                 Data = repo.DataList;
@@ -246,10 +236,10 @@ namespace TMG.Ilute.Data
 
         public struct MultipleAccessContext : IDisposable
         {
-            private readonly Repository<T, K> Repo;
+            private readonly Repository<T> Repo;
             private readonly List<T> Data;
             public readonly int Length;
-            public MultipleAccessContext(Repository<T, K> repo)
+            public MultipleAccessContext(Repository<T> repo)
             {
                 Repo = repo;
                 Data = repo.DataList;
