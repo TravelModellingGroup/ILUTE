@@ -198,9 +198,11 @@ namespace TMG.Ilute.Data
             private readonly int Length;
             private readonly Repository<T> Repo;
             private int Index;
+            private volatile bool IsDisposed;
 
             public RepositoryEnumerator(Repository<T> repo)
             {
+                IsDisposed = false;
                 Repo = repo;
                 Data = repo.DataList;
                 Length = Data.Count;
@@ -230,6 +232,15 @@ namespace TMG.Ilute.Data
 
             public void Dispose()
             {
+                lock (Data)
+                {
+                    if (IsDisposed)
+                    {
+                        throw new InvalidOperationException("Can not dispose an enumeration more than once!");
+                    }
+                    IsDisposed = true;
+                }
+                Thread.MemoryBarrier();
                 Repo.ListLock.ExitReadLock();
             }
         }
@@ -239,8 +250,11 @@ namespace TMG.Ilute.Data
             private readonly Repository<T> Repo;
             private readonly List<T> Data;
             public readonly int Length;
+            private volatile bool IsDisposed;
+
             public MultipleAccessContext(Repository<T> repo)
             {
+                IsDisposed = false;
                 Repo = repo;
                 Data = repo.DataList;
                 Repo.ListLock.EnterReadLock();
@@ -262,11 +276,26 @@ namespace TMG.Ilute.Data
 
             public void Dispose()
             {
+                lock (Data)
+                {
+                    if (IsDisposed)
+                    {
+                        throw new InvalidOperationException("Can not dispose a disposed context!");
+                    }
+                    IsDisposed = true;
+                }
                 Thread.MemoryBarrier();
                 Repo.ListLock.ExitReadLock();
             }
         }
 
+        /// <summary>
+        /// Get a context which allows you to make multiple reads
+        /// from the repository without allowing a write to occur
+        /// and to reduce the number of lock checks.  Use this
+        /// with a using statement to ensure dispose gets invoked.
+        /// </summary>
+        /// <returns>The context</returns>
         public MultipleAccessContext GetMultiAccessContext()
         {
             return new MultipleAccessContext(this);
