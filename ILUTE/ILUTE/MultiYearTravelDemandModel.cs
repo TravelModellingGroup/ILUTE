@@ -92,6 +92,7 @@ namespace TMG.Ilute
 
         public void Start()
         {
+            ZoneSystem.LoadData();
             for (int i = 0; i < PreRun.Length; i++)
             {
                 PreRun[i].Start();
@@ -123,6 +124,7 @@ namespace TMG.Ilute
             {
                 PostRun[i].Start();
             }
+            ZoneSystem.UnloadData();
         }
     }
 }
