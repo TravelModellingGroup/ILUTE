@@ -21,6 +21,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMG.Ilute.Data;
+using TMG.Ilute.Data.Demographics;
+using TMG.Ilute.Model.Utilities;
 using TMG.Input;
 using XTMF;
 
@@ -34,8 +37,6 @@ Household:
 ")]
     public class InitializePopulation : ISelfContainedModule
     {
-
-
         [SubModelInformation(Required = true, Description = "The location of the household file to load")]
         public FileLocation InitialHouseholdFile;
 
@@ -55,7 +56,10 @@ Household:
         public IResource RepositoryFamily;
 
         [SubModelInformation(Required = true, Description = "The resource containing household information.")]
-        public IResource RepositoryHousehold;
+        public IDataSource<Repository<Household>> RepositoryHousehold;
+
+        [SubModelInformation(Required = true, Description = "")]
+        public IDataSource<ExecutionLog> LogSource;
 
         public string Name { get; set; }
 
