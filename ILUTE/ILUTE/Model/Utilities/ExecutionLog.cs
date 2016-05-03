@@ -70,6 +70,10 @@ namespace TMG.Ilute.Model.Utilities
             }
         }
 
+        /// <summary>
+        /// Save a message to the log.
+        /// </summary>
+        /// <param name="toLog">The message to write to the log.</param>
         public void WriteToLog(string toLog)
         {
             if (Writer != null)
