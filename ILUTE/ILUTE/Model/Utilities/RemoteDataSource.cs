@@ -92,6 +92,7 @@ namespace TMG.Ilute.Model.Utilities
                     + "' instead of was of type '" + linked.GetResourceType().Name + "'!";
                 return false;
             }
+            Linked = linked;
             return true;
         }
 
