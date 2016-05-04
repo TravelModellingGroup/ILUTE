@@ -192,6 +192,31 @@ namespace TMG.Ilute.Data
             return ret;
         }
 
+        /// <summary>
+        /// Get or set by index
+        /// </summary>
+        /// <param name="index">The index to work with</param>
+        /// <returns>The value at the given index</returns>
+        public T this[int index]
+        {
+            get
+            {
+                return GetByID(index);
+            }
+            set
+            {
+                SetByID(value, index);
+            }
+        }
+
+        public int Count
+        {
+            get
+            {
+                return DataList.Count;
+            }
+        }
+
         public struct RepositoryEnumerator : IEnumerator<T>
         {
             private readonly List<T> Data;

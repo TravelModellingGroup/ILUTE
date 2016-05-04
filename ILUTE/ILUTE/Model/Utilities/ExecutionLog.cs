@@ -30,13 +30,13 @@ namespace TMG.Ilute.Model.Utilities
     [ModuleInformation(Description = "This module provides a simple way to log the results from the model system to file.")]
     public sealed class ExecutionLog : IDataSource<ExecutionLog>, IDisposable
     {
-        [SubModelInformation(Required = true, Description = "The location to save the log to.")]
+        [SubModelInformation(Required = false, Description = "The location to save the log to (blank will write to console)")]
         public FileLocation SaveTo;
 
         [RunParameter("Append to log", true, "Append the new log if the file already exists.")]
         public bool Append;
 
-        private StreamWriter Writer;
+        private TextWriter Writer;
 
         public bool Loaded { get; set; }
 
@@ -61,11 +61,11 @@ namespace TMG.Ilute.Model.Utilities
             lock (this)
             {
                 // make sure that the data would have already been saved
-                if(Writer != null)
+                if (Writer != null)
                 {
                     UnloadData();
                 }
-                Writer = new StreamWriter(SaveTo, Append);
+                Writer = SaveTo == null ? Console.Out : new StreamWriter(SaveTo, Append);
                 Loaded = true;
             }
         }
@@ -76,18 +76,28 @@ namespace TMG.Ilute.Model.Utilities
         /// <param name="toLog">The message to write to the log.</param>
         public void WriteToLog(string toLog)
         {
-            if (Writer != null)
+            lock (this)
             {
+                var writer = Writer;
                 var currentTime = DateTime.Now;
-                Writer.Write('[');
-                Writer.Write(currentTime.Hour);
-                Writer.Write(':');
-                Writer.Write(currentTime.Minute);
-                Writer.Write(':');
-                Writer.Write(currentTime.Second);
-                Writer.Write("] ");
-                Writer.WriteLine(toLog);
+                writer.Write('[');
+                WriteTwoDigits(writer, currentTime.Hour);
+                writer.Write(':');
+                WriteTwoDigits(writer, currentTime.Minute);
+                writer.Write(':');
+                WriteTwoDigits(writer, currentTime.Second);
+                writer.Write("] ");
+                writer.WriteLine(toLog);
             }
+        }
+
+        private static void WriteTwoDigits(TextWriter writer, int number)
+        {
+            if(number < 10)
+            {
+                writer.Write('0');
+            }
+            writer.Write(number);
         }
 
         public bool RuntimeValidation(ref string error)
@@ -99,11 +109,11 @@ namespace TMG.Ilute.Model.Utilities
         {
             lock (this)
             {
-                if (Writer != null)
+                if (Writer != null && SaveTo != null)
                 {
                     Writer.Dispose();
-                    Writer = null;
                 }
+                Writer = null;
                 Loaded = false;
             }
         }

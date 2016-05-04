@@ -24,7 +24,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\XTMF-Dev\Modules\</OutputPath>
+    <OutputPath>..\..\..\XTMF-Dev\Modules\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -60,8 +60,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\Date.cs" />
+    <Compile Include="Data\Demographics\DemographicEnumerations.cs" />
     <Compile Include="Data\Demographics\Education\EducationLevels.cs" />
     <Compile Include="Data\Demographics\Education\PersonalEducation.cs" />
+    <Compile Include="Data\Housing\Dwelling.cs" />
     <Compile Include="Data\LabourForce\Job.cs" />
     <Compile Include="Data\IndexedObject.cs" />
     <Compile Include="Data\Repository.cs" />

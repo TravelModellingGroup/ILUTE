@@ -16,40 +16,19 @@
     You should have received a copy of the GNU General Public License
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
-namespace TMG.Ilute.Data.Demographics
+using System.Threading.Tasks;
+namespace TMG.Ilute.Data.Housing
 {
-    public sealed class Person : IndexedObject
+    public class Dwelling : IndexedObject
     {
-        public List<int> Children { get; private set; }
-
-        public List<int> Siblings { get; private set; }
-
-        public int Age { get; set; }
-
-        public int Father { get; private set; }
-
-        public int Mother { get; private set; }
-
-        public int Spouse { get; set; }
-
-        public int Family { get; set; }
-
-        public int Household { get; set; }
-
-        public bool Living { get; set; }
-
-        public Sex Sex { get; set; }
-
-        public Person()
-        {
-            Living = true;
-            Children = new List<int>(4);
-            Siblings = new List<int>(4);
-        }
+        /// <summary>
+        /// Does this dwelling still exist?
+        /// </summary>
+        public bool Exists { get; set; }
     }
 }
