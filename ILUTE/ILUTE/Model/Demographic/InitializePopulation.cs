@@ -153,9 +153,47 @@ Household:
                         Dwelling d = new Dwelling();
                         householdRepo.AddNew(dwellingid, h);
                         dwellingRepo.AddNew(dwellingid, d);
+                        h.Dwelling = dwellingid;
+                        h.HouseholdType = ConvertHouseholdType(hhcomp);
+                        d.Exists = true;
+                        h.Tenure = ConvertTenureFromCensus(tenur);
                     }
                 }
             }
+        }
+
+        private HouseholdComposition ConvertHouseholdType(int hhcomp)
+        {
+            switch (hhcomp)
+            {
+                case 1:
+                    // 1 person individual households
+                    return HouseholdComposition.SingleIndividuals;
+                case 2:
+                    // 2+ person individual households
+                    return HouseholdComposition.MultiIndividuals;
+                case 3:
+                    // Single family households
+                    return HouseholdComposition.SingleFamily;
+                case 4:
+                    // Single family and individual households
+                    return HouseholdComposition.SingleFamilyIndividuals;
+                case 5:
+                    // Multiple family households
+                    return HouseholdComposition.MultiFamily;
+                default:
+                    // If error, assume single family
+                    return HouseholdComposition.SingleFamily;
+            }
+        }
+
+        public DwellingUnitTenure ConvertTenureFromCensus(int tenurh)
+        {
+            if (tenurh == 1)
+            {
+                return DwellingUnitTenure.own;
+            }
+            return DwellingUnitTenure.rent;
         }
 
         private void LoadFamilies()
@@ -166,6 +204,7 @@ Household:
             var householdRepo = LoadRepository(RepositoryHousehold);
             using (var familyContext = familyRepo.GetMultiAccessContext())
             using (var personContext = personRepo.GetMultiAccessContext())
+            using (var hhldContext = householdRepo.GetMultiAccessContext())
             using (var reader = new CsvReader(InitialFamilyFile))
             {
                 int columns;
@@ -189,7 +228,7 @@ Household:
                             continue;
                         }
                         Household h;
-                        h = householdRepo[dwellingId];
+                        h = hhldContext[dwellingId];
                         family.Household = dwellingId;
                         h.Families.Add(familyId);
                     }

@@ -20,36 +20,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using TMG.Ilute.Data.Housing;
+using System.Threading.Tasks;
 
-namespace TMG.Ilute.Data.Demographics
+namespace TMG.Ilute.Data.Housing
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public sealed class Household : IndexedObject
+    public enum DwellingUnitTenure
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        public List<int> Families { get; private set; }
-
-        /// <summary>
-        /// The Dwelling the household lives in
-        /// </summary>
-        public int Dwelling { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public HouseholdComposition HouseholdType { get; set; }
-        /// <summary>
-        /// Is the household renting or do they own
-        /// </summary>
-        public DwellingUnitTenure Tenure { get; set; }
-
-        public Household()
-        {
-            Families = new List<int>(1);
-        }        
-    }
+        own,
+        rent
+    };
 }
