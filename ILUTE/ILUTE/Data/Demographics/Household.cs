@@ -25,7 +25,8 @@ using TMG.Ilute.Data.Housing;
 namespace TMG.Ilute.Data.Demographics
 {
     /// <summary>
-    /// 
+    /// Represents the grouping of families that occupy a dwelling, and their relationship
+    /// with that dwelling.
     /// </summary>
     public sealed class Household : IndexedObject
     {

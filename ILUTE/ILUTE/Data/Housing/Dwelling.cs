@@ -30,5 +30,15 @@ namespace TMG.Ilute.Data.Housing
         /// Does this dwelling still exist?
         /// </summary>
         public bool Exists { get; set; }
+
+        /// <summary>
+        /// The number of rooms in the dwelling
+        /// </summary>
+        public int Rooms { get; set; }
+
+        /// <summary>
+        /// The number of dollars
+        /// </summary>
+        public Money Value { get; set; }
     }
 }

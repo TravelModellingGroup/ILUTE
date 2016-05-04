@@ -156,6 +156,8 @@ Household:
                         h.Dwelling = dwellingid;
                         h.HouseholdType = ConvertHouseholdType(hhcomp);
                         d.Exists = true;
+                        d.Rooms = rooms;
+                        d.Value = new Money(value, new Date(1986, 0));
                         h.Tenure = ConvertTenureFromCensus(tenur);
                     }
                 }
