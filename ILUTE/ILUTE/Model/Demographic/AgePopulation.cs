@@ -34,7 +34,6 @@ namespace TMG.Ilute.Model.Demographic
         [RunParameter("Increase Age of Deceased", true, "If this is false a person will not age after they die.")]
         public bool IncreaseAgeOfDeceased;
 
-
         public string Name { get; set; }
 
         public float Progress { get; set; }
@@ -61,24 +60,20 @@ namespace TMG.Ilute.Model.Demographic
         public void Execute(int year)
         {
             var repo = PersonRepository.AcquireResource<Repository<Person>>();
-            using (var people = repo.GetMultiAccessContext())
+            if (IncreaseAgeOfDeceased)
             {
-                if (IncreaseAgeOfDeceased)
+                foreach (var person in repo)
                 {
-                    for (int i = 0; i < people.Length; i++)
-                    {
-                        people[i].Age++;
-                    }
+                    person.Age++;
                 }
-                else
+            }
+            else
+            {
+                foreach (var person in repo)
                 {
-                    for (int i = 0; i < people.Length; i++)
+                    if (person.Living)
                     {
-                        var person = people[i];
-                        if (person.Living)
-                        {
-                            person.Age++;
-                        }
+                        person.Age++;
                     }
                 }
             }

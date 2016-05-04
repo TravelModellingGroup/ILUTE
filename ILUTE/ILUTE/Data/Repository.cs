@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TMG.Ilute.Data.Demographics;
 using XTMF;
 
 namespace TMG.Ilute.Data
@@ -36,7 +37,7 @@ namespace TMG.Ilute.Data
         /// <summary>
         /// Call this to let dependences know that
         /// </summary>
-        internal abstract void MakeNew();
+        internal abstract void MakeNew(int index);
     }
 
     /// <summary>
@@ -85,12 +86,12 @@ namespace TMG.Ilute.Data
 
         public void UnloadData()
         {
-            ListLock.EnterWriteLock();
+            DataLock.EnterWriteLock();
             Thread.MemoryBarrier();
-            DataList.Clear();
+            Data.Clear();
             Loaded = false;
             Thread.MemoryBarrier();
-            ListLock.ExitWriteLock();
+            DataLock.ExitWriteLock();
         }
 
         [SubModelInformation(Description = "Repositories that need to increase when data is added to this repository.")]
@@ -104,33 +105,50 @@ namespace TMG.Ilute.Data
         /// <summary>
         /// This is used before accessing the DataList
         /// </summary>
-        private ReaderWriterLockSlim ListLock = new ReaderWriterLockSlim();
+        private ReaderWriterLockSlim DataLock = new ReaderWriterLockSlim();
 
         /// <summary>
         /// The data storage, get the ListLock before accessing
         /// </summary>
-        private List<T> DataList = new List<T>();
+        private Dictionary<int, T> Data = new Dictionary<int, T>();
 
         /// <summary>
         /// Add a new entry
         /// </summary>
         /// <param name="data">The information to add to the repository</param>
         /// <returns>The new index assigned for this element</returns>
-        public int AddNew(T data)
+        public int AddNew(int index, T data)
         {
-            ListLock.EnterWriteLock();
+            DataLock.EnterWriteLock();
             Thread.MemoryBarrier();
-            int index = DataList.Count;
-            DataList.Add(data);
-            data.Id = index;
+            Data.Add(index, data);
+            // If the index is equal to or higher than the highest index so far, increase that index
+            Highest = Math.Max(index + 1, Highest);
             Thread.MemoryBarrier();
             for (int i = 0; i < Dependents.Length; i++)
             {
-                Dependents[i].MakeNew();
+                Dependents[i].MakeNew(index);
             }
-            ListLock.ExitWriteLock();
+            DataLock.ExitWriteLock();
             return index;
         }
+
+        public int AddNew(T data)
+        {
+            DataLock.EnterWriteLock();
+            Thread.MemoryBarrier();
+            int index = Interlocked.Increment(ref Highest);
+            Data.Add(index, data);
+            Thread.MemoryBarrier();
+            for (int i = 0; i < Dependents.Length; i++)
+            {
+                Dependents[i].MakeNew(index);
+            }
+            DataLock.ExitWriteLock();
+            return index;
+        }
+
+        private volatile int Highest = 0;
 
         /// <summary>
         /// 
@@ -139,29 +157,34 @@ namespace TMG.Ilute.Data
         /// <param name="index"></param>
         public void SetByID(T data, int index)
         {
-            DataList[index] = data;
+            DataLock.EnterWriteLock();
+            Thread.MemoryBarrier();
+            Data[index] = data;
+            DataLock.ExitWriteLock();
+            Thread.MemoryBarrier();
         }
 
         /// <summary>
         /// 
         /// </summary>
-        sealed override internal void MakeNew()
+        sealed override internal void MakeNew(int index)
         {
-            ListLock.EnterWriteLock();
+            DataLock.EnterWriteLock();
             Thread.MemoryBarrier();
-            var index = DataList.Count;
             var data = default(T);
             if (data != null)
             {
                 data.Id = index;
             }
-            DataList.Add(data);
+            Data.Add(index, data);
+            // If the index is equal to or higher than the highest index so far, increase that index
+            Highest = Math.Max(index + 1, Highest);
             Thread.MemoryBarrier();
             for (int i = 0; i < Dependents.Length; i++)
             {
-                Dependents[i].MakeNew();
+                Dependents[i].MakeNew(index);
             }
-            ListLock.ExitWriteLock();
+            DataLock.ExitWriteLock();
         }
 
         /// <summary>
@@ -172,20 +195,49 @@ namespace TMG.Ilute.Data
         public T GetByID(int id)
         {
             T ret = null;
-            ListLock.EnterReadLock();
+            DataLock.EnterReadLock();
             Thread.MemoryBarrier();
 #if DEBUG
             try
             {
 #endif
-            ret = DataList[id];
+            ret = Data[id];
 #if DEBUG
             }
             finally
             {
 #endif
             Thread.MemoryBarrier();
-            ListLock.ExitReadLock();
+            DataLock.ExitReadLock();
+#if DEBUG
+            }
+#endif
+            return ret;
+        }
+
+        /// <summary>
+        /// Try to get the data for the given index
+        /// </summary>
+        /// <param name="id">The index of the data</param>
+        /// <param name="data">The data to access</param>
+        /// <returns>True if the data was recalled, false otherwise.</returns>
+        public bool TryGet(int id, out T data)
+        {
+            bool ret;
+            DataLock.EnterReadLock();
+            Thread.MemoryBarrier();
+#if DEBUG
+            try
+            {
+#endif
+            ret = Data.TryGetValue(id, out data);
+#if DEBUG
+            }
+            finally
+            {
+#endif
+            Thread.MemoryBarrier();
+            DataLock.ExitReadLock();
 #if DEBUG
             }
 #endif
@@ -213,41 +265,44 @@ namespace TMG.Ilute.Data
         {
             get
             {
-                return DataList.Count;
+                return Data.Count;
             }
         }
 
         public struct RepositoryEnumerator : IEnumerator<T>
         {
-            private readonly List<T> Data;
-            private readonly int Length;
+            private readonly Dictionary<int, T> Data;
+            private readonly List<int> Keys;
             private readonly Repository<T> Repo;
             private int Index;
             private volatile bool IsDisposed;
+            private readonly int Length;
+
 
             public RepositoryEnumerator(Repository<T> repo)
             {
                 IsDisposed = false;
                 Repo = repo;
-                Data = repo.DataList;
-                Length = Data.Count;
+                Data = repo.Data;
+                Keys = Data.Keys.ToList();
+                Length = Keys.Count;
                 Index = 0;
-                repo.ListLock.EnterReadLock();
+                repo.DataLock.EnterReadLock();
             }
 
             public T Current
             {
-                get { return Data[Index]; }
+                get { return Data[Keys[Index++]]; }
             }
 
             object IEnumerator.Current
             {
-                get { return Data[Index]; }
+                get { return Data[Keys[Index++]]; }
             }
 
             public bool MoveNext()
             {
-                return (++Index < Length);
+                return (Index < Keys.Count);
             }
 
             public void Reset()
@@ -266,25 +321,30 @@ namespace TMG.Ilute.Data
                     IsDisposed = true;
                 }
                 Thread.MemoryBarrier();
-                Repo.ListLock.ExitReadLock();
+                Repo.DataLock.ExitReadLock();
             }
         }
 
         public struct MultipleAccessContext : IDisposable
         {
             private readonly Repository<T> Repo;
-            private readonly List<T> Data;
-            public readonly int Length;
+            private readonly Dictionary<int, T> Data;
             private volatile bool IsDisposed;
+            private readonly int Count;
 
             public MultipleAccessContext(Repository<T> repo)
             {
                 IsDisposed = false;
                 Repo = repo;
-                Data = repo.DataList;
-                Repo.ListLock.EnterReadLock();
+                Data = repo.Data;
+                Count = Data.Count;
+                Repo.DataLock.EnterReadLock();
                 Thread.MemoryBarrier();
-                Length = Data.Count;
+            }
+
+            public bool TryGet(int index, out T data)
+            {
+                return Data.TryGetValue(index, out data);
             }
 
             public T this[int i]
@@ -299,6 +359,16 @@ namespace TMG.Ilute.Data
                 }
             }
 
+            public static implicit operator List<int>(MultipleAccessContext context)
+            {
+                return context.GetKeys();
+            }
+
+            public List<int> GetKeys()
+            {
+                return Data.Keys.ToList();
+            }
+
             public void Dispose()
             {
                 lock (Data)
@@ -310,7 +380,7 @@ namespace TMG.Ilute.Data
                     IsDisposed = true;
                 }
                 Thread.MemoryBarrier();
-                Repo.ListLock.ExitReadLock();
+                Repo.DataLock.ExitReadLock();
             }
         }
 

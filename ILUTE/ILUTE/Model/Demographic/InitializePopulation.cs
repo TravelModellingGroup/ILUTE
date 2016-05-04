@@ -24,6 +24,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TMG.Ilute.Data;
 using TMG.Ilute.Data.Demographics;
+using TMG.Ilute.Data.Housing;
 using TMG.Ilute.Model.Utilities;
 using TMG.Input;
 using XTMF;
@@ -59,6 +60,9 @@ Household:
         [SubModelInformation(Required = true, Description = "The resource containing household information.")]
         public IDataSource<Repository<Household>> RepositoryHousehold;
 
+        [SubModelInformation(Required = true, Description = "The resource containing dwelling information.")]
+        public IDataSource<Repository<Dwelling>> RepositoryDwellings;
+
         [SubModelInformation(Required = false, Description = "")]
         public IDataSource<ExecutionLog> LogSource;
 
@@ -78,14 +82,10 @@ Household:
         public void Start()
         {
             LoadLog();
-            Dictionary<int, int>
-                familyLookup = new Dictionary<int, int>(),
-                personLookup = new Dictionary<int, int>(),
-                householdLookup = new Dictionary<int, int>();
             WriteToLog("Loading Demographic information");
-            LoadPersons(familyLookup, personLookup);
-            LoadDwellings(householdLookup);
-            LoadFamilies(familyLookup, personLookup, householdLookup);
+            LoadPersons();
+            LoadDwellings();
+            LoadFamilies();
             WriteToLog("Finished Loading Demographic information");
         }
 
@@ -115,10 +115,11 @@ Household:
             return source.GiveData();
         }
 
-        private void LoadDwellings(Dictionary<int, int> householdLookup)
+        private void LoadDwellings()
         {
-            WriteToLog("Starting to Load Dwellings");
+            WriteToLog("Starting to Load Dwellings/Households");
             var householdRepo = LoadRepository(RepositoryHousehold);
+            var dwellingRepo = LoadRepository(RepositoryDwellings);
             using (var reader = new CsvReader(InitialHouseholdFile))
             {
                 int columns;
@@ -128,13 +129,36 @@ Household:
                 }
                 while (reader.LoadLine(out columns))
                 {
-
+                    /*
+                    int dwellingid, pumhid, ctcode, tts96, prov, urbru, cmapust, weight, hhinda, hhindb, hhpera, hhperb1, hhperb2, hhperd, hhpere,
+                        hhperf, hhperg, hhperh, hhsize, hhcomp, hhnonfam, hhnuef, hhnuldg, hhnuempi, hhnutoti, hhmsinc, hhempinc, hhnetinv,
+                        hhgovinc, hhotinc, hhtotinc, dtypeh, builth, tenurh, morg, rcondh, room, heath, fuelhh, valueh, grosrth, renth, omph,
+                        mppit,hmage, hmsex, hmmarst, hmefamst, hmbirtpl, hmethnic, hmimmig, hhmotg, hmofflg, hmmob5, hmhlos, hmocc81, hmlfact,
+                        hmcow, hmwkswk, hmfptwk, hmmsinc, hmempinc, hmnetinv, hmgovinc, hmotinc, hmtotinc, spage, spsex, spbirtpl, spethnic,
+                        spmotg, spofflg, spimmig, spmob5, sphlos, spocc81, splfact, spcow, spwkswk, spfptwk, spmsinc, spempinc, spnetinv, spgovinc,
+                        spotinc, sptotinc, efsize, efadult, efpersgh, efpersa, efpersb, efpersc, efpersd, efcomp, efnuempi, efnutoti, efloinc,
+                        efmsinc, efempinc, efnetinv, efgovinc, efotinc, eftotinc, id;
+                    */
+                    if (columns > 39)
+                    {
+                        int dwellingid, ctcode, hhcomp, dtype, tenur, rooms, value;
+                        reader.Get(out dwellingid, 0);
+                        reader.Get(out ctcode, 2);
+                        reader.Get(out hhcomp, 19);
+                        reader.Get(out dtype, 31);
+                        reader.Get(out tenur, 33);
+                        reader.Get(out rooms, 36);
+                        reader.Get(out value, 39);
+                        Household h = new Household();
+                        Dwelling d = new Dwelling();
+                        householdRepo.AddNew(dwellingid, h);
+                        dwellingRepo.AddNew(dwellingid, d);
+                    }
                 }
             }
-
         }
 
-        private void LoadFamilies(Dictionary<int, int> familyLookup, Dictionary<int, int> personLookup, Dictionary<int, int> householdLookup)
+        private void LoadFamilies()
         {
             WriteToLog("Starting to Load Families");
             var personRepo = LoadRepository(RepositoryPerson);
@@ -157,30 +181,23 @@ Household:
                         reader.Get(out familyId, 0);
                         reader.Get(out dwellingId, 2);
                         // if the family is being used, update the index
-                        if (familyLookup.TryGetValue(familyId, out familyId))
+
+                        var family = familyContext[familyId];
+                        // if there is no dwelling we can't initialize them
+                        if (dwellingId < 0)
                         {
-                            var family = familyContext[familyId];
-                            int householdIndex;
-                            // if there is no dwelling we can't initialize them
-                            if (dwellingId < 0)
-                            {
-                                continue;
-                            }
-                            Household h;
-                            if (!householdLookup.TryGetValue(dwellingId, out householdIndex))
-                            {
-                                throw new XTMFRuntimeException("Tried to load a dwelling that does not exist!");
-                            }
-                            h = householdRepo[householdIndex];
-                            family.Household = householdIndex;
-                            h.Families.Add(familyId);
+                            continue;
                         }
+                        Household h;
+                        h = householdRepo[dwellingId];
+                        family.Household = dwellingId;
+                        h.Families.Add(familyId);
                     }
                 }
             }
         }
 
-        private void LoadPersons(Dictionary<int, int> familyLookup, Dictionary<int, int> personLookup)
+        private void LoadPersons()
         {
             WriteToLog("Starting to Load Persons");
             var personRepo = LoadRepository(RepositoryPerson);
@@ -201,7 +218,7 @@ Household:
                 */
                 // there is no header at the moment so we don't need to burn a line
                 int columns;
-                if(FilesContainHeaders)
+                if (FilesContainHeaders)
                 {
                     reader.LoadLine();
                 }
@@ -229,42 +246,30 @@ Household:
                         reader.Get(out psot, 40);
                         reader.Get(out trnuc, 41);
                         reader.Get(out dgree, 42);
-                        int familyIndex;
                         Family personsFamily;
-                        if (!familyLookup.TryGetValue(familyid, out familyIndex))
+
+                        // if they are living alone create a new family for them
+                        if (familyid < 0)
                         {
-                            // if they are living alone create a new family for them
-                            if (familyid < 0)
+                            // if the person has no family and no dwelling just continue
+                            // this would mean that they live in a collective
+                            if (dwellingid < 0)
                             {
-                                // if the person has no family and no dwelling just continue
-                                // this would mean that they live in a collective
-                                if (dwellingid < 0)
-                                {
-                                    continue;
-                                }
-                                personsWithNegativeFamilyIndex++;
-                                personsFamily = new Family();
-                                familyRepo.AddNew(personsFamily);
-                                familyIndex = personsFamily.Id;
-                                familyLookup.Add(familyIndex, familyIndex);
+                                continue;
                             }
-                            else
-                            {
-                                // otherwise create the new family
-                                personsFamily = new Family();
-                                familyRepo.AddNew(personsFamily);
-                                familyIndex = personsFamily.Id;
-                                familyLookup.Add(familyid, familyIndex);
-                            }
+                            personsWithNegativeFamilyIndex++;
+                            personsFamily = new Family();
+                            familyRepo.AddNew(personsFamily);
                         }
-                        else
+                        else if (!familyRepo.TryGet(familyid, out personsFamily))
                         {
-                            personsFamily = familyRepo[familyIndex];
+                            // otherwise create the new family
+                            personsFamily = new Family();
+                            familyRepo.AddNew(familyid, personsFamily);
                         }
                         Person p;
                         //TODO:  Finish filling out the personal information for this individual
-                        personRepo.AddNew((p = new Person() { Age = agep, Family = familyIndex, Living = true, Sex = sexp == 2 ? Sex.Male : Sex.Female }));
-                        personLookup.Add(personid, p.Id);
+                        personRepo.AddNew(personid, (p = new Person() { Age = agep, Family = familyid, Living = true, Sex = sexp == 2 ? Sex.Male : Sex.Female }));
                         // add the person to their family
                         personsFamily?.Persons.Add(p.Id);
                     }
