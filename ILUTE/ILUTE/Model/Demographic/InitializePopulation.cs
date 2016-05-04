@@ -226,16 +226,14 @@ Household:
                         reader.Get(out familyId, 0);
                         reader.Get(out dwellingId, 2);
                         // if the family is being used, update the index
-
                         var family = familyContext[familyId];
                         // if there is no dwelling we can't initialize them
                         if (dwellingId < 0)
                         {
                             continue;
                         }
-                        Household h;
-                        h = hhldContext[dwellingId];
-                        family.Household = dwellingId;
+                        Household h = hhldContext[dwellingId];
+                        family.Household = h;
                         h.Families.Add(family);
                     }
                 }
@@ -314,9 +312,9 @@ Household:
                         }
                         Person p;
                         //TODO:  Finish filling out the personal information for this individual
-                        personRepo.AddNew(personid, (p = new Person() { Age = agep, Family = familyid, Living = true, Sex = sexp == 2 ? Sex.Male : Sex.Female }));
+                        personRepo.AddNew(personid, (p = new Person() { Age = agep, Family = personsFamily, Living = true, Sex = sexp == 2 ? Sex.Male : Sex.Female }));
                         // add the person to their family
-                        personsFamily?.Persons.Add(p.Id);
+                        personsFamily.Persons.Add(p);
                     }
                 }
                 WriteToLog("Total number of families loaded: " + familyRepo.Count);

@@ -25,16 +25,16 @@ namespace TMG.Ilute.Data.Demographics
 {
     public sealed class Family : IndexedObject
     {
-        public List<int> Persons { get; private set; }
+        public List<Person> Persons { get; private set; }
 
         /// <summary>
         /// The index of the household this family is part of
         /// </summary>
-        public int Household { get; set; }
+        public Household Household { get; set; }
 
         public Family()
         {
-            Persons = new List<int>(4);
+            Persons = new List<Person>(2);
         }
     }
 }

@@ -76,5 +76,10 @@ namespace TMG.Ilute.Data.Demographics
                 }
             }
         }
+
+        public void RemoveFamily(Family family)
+        {
+            Families.Remove(family);
+        }
     }
 }

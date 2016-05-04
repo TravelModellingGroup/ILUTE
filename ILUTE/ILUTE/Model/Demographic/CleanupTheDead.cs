@@ -88,14 +88,15 @@ namespace TMG.Ilute.Model.Demographic
                 // remove each person from their families
                 foreach (var person in personsToKill)
                 {
-                    var family = families[person.Family];
-                    var household = households[family.Household];
+                    person.Remove();
+                    var family = person.Family;
+                    var household = family.Household;
                     var personsInFamily = family.Persons;
-                    personsInFamily.Remove(person.Id);
+                    personsInFamily.Remove(person);
                     if (personsInFamily.Count <= 0)
                     {
                         ret.Add(family);
-                        household.Families.Remove(family);
+                        household.RemoveFamily(family);
                         household.UpdateHouseholdType();
                     }
                 }

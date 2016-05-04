@@ -25,21 +25,21 @@ namespace TMG.Ilute.Data.Demographics
 {
     public sealed class Person : IndexedObject
     {
-        public List<int> Children { get; private set; }
+        public List<Person> Children { get; private set; }
 
-        public List<int> Siblings { get; private set; }
+        public List<Person> Siblings { get; private set; }
 
         public int Age { get; set; }
 
-        public int Father { get; private set; }
+        public Person Father { get; set; }
 
-        public int Mother { get; private set; }
+        public Person Mother { get; set; }
 
-        public int Spouse { get; set; }
+        public Person Spouse { get; set; }
 
-        public int Family { get; set; }
+        public Family Family { get; set; }
 
-        public int Household { get; set; }
+        public Household Household { get; set; }
 
         public bool Living { get; set; }
 
@@ -48,8 +48,33 @@ namespace TMG.Ilute.Data.Demographics
         public Person()
         {
             Living = true;
-            Children = new List<int>(4);
-            Siblings = new List<int>(4);
+            Children = new List<Person>(4);
+            Siblings = new List<Person>(4);
+        }
+
+        internal void Remove()
+        {
+            var household = Family.Household;
+            var personsInFamily = Family.Persons;
+            personsInFamily.Remove(this);
+            if (personsInFamily.Count <= 0)
+            {
+                household.RemoveFamily(Family);
+                household.UpdateHouseholdType();
+            }
+            Father?.RemoveChild(this);
+            Mother?.RemoveChild(this);
+            Spouse?.RemoveSpouse(this);
+        }
+
+        private void RemoveSpouse(Person person)
+        {
+            Spouse = null;
+        }
+
+        private void RemoveChild(Person person)
+        {
+            Children.Remove(person);
         }
     }
 }
