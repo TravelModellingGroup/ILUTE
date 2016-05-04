@@ -36,6 +36,7 @@ namespace TMG.Ilute.Data.Demographics
         MultiFamily,
         SingleIndividuals,
         SingleFamilyIndividuals,
-        MultiIndividuals
+        MultiIndividuals,
+        NoFamilies
     };
 }

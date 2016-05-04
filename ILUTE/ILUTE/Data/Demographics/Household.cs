@@ -33,7 +33,7 @@ namespace TMG.Ilute.Data.Demographics
         /// <summary>
         /// 
         /// </summary>
-        public List<int> Families { get; private set; }
+        public List<Family> Families { get; private set; }
 
         /// <summary>
         /// The Dwelling the household lives in
@@ -50,7 +50,31 @@ namespace TMG.Ilute.Data.Demographics
 
         public Household()
         {
-            Families = new List<int>(1);
-        }        
+            Families = new List<Family>(1);
+        }
+
+        /// <summary>
+        /// Invoke this when a household is changed
+        /// </summary>
+        internal void UpdateHouseholdType()
+        {
+            
+            if(Families.Count == 1)
+            {
+                throw new NotImplementedException();
+            }
+            else if(Families.Count <= 0)
+            {
+                HouseholdType = HouseholdComposition.NoFamilies;
+            }
+            else
+            {
+                bool allIndividuals = true;
+                for (int i = 0; i < Families.Count; i++)
+                {
+                    
+                }
+            }
+        }
     }
 }

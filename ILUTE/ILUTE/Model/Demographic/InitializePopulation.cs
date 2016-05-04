@@ -66,6 +66,9 @@ Household:
         [SubModelInformation(Required = false, Description = "")]
         public IDataSource<ExecutionLog> LogSource;
 
+        [RunParameter("Initial Year", 1986, "The year that this data is from.")]
+        public int InitialYear;
+
         private ExecutionLog Log;
 
         public string Name { get; set; }
@@ -120,6 +123,7 @@ Household:
             WriteToLog("Starting to Load Dwellings/Households");
             var householdRepo = LoadRepository(RepositoryHousehold);
             var dwellingRepo = LoadRepository(RepositoryDwellings);
+            var initialDate = new Date(InitialYear, 0);
             using (var reader = new CsvReader(InitialHouseholdFile))
             {
                 int columns;
@@ -157,7 +161,7 @@ Household:
                         h.HouseholdType = ConvertHouseholdType(hhcomp);
                         d.Exists = true;
                         d.Rooms = rooms;
-                        d.Value = new Money(value, new Date(1986, 0));
+                        d.Value = new Money(value, initialDate);
                         h.Tenure = ConvertTenureFromCensus(tenur);
                     }
                 }
@@ -232,7 +236,7 @@ Household:
                         Household h;
                         h = hhldContext[dwellingId];
                         family.Household = dwellingId;
-                        h.Families.Add(familyId);
+                        h.Families.Add(family);
                     }
                 }
             }

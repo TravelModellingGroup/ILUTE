@@ -38,6 +38,8 @@ namespace TMG.Ilute.Data
         /// Call this to let dependences know that
         /// </summary>
         internal abstract void MakeNew(int index);
+
+        internal abstract void CascadeRemove(int index);
     }
 
     /// <summary>
@@ -165,7 +167,7 @@ namespace TMG.Ilute.Data
         }
 
         /// <summary>
-        /// 
+        /// Generate a new entry for the given position
         /// </summary>
         sealed override internal void MakeNew(int index)
         {
@@ -183,6 +185,32 @@ namespace TMG.Ilute.Data
             for (int i = 0; i < Dependents.Length; i++)
             {
                 Dependents[i].MakeNew(index);
+            }
+            DataLock.ExitWriteLock();
+        }
+
+        /// <summary>
+        /// Remove the given index from the repository
+        /// </summary>
+        /// <param name="index">The index to remove</param>
+        public void Remove(int index)
+        {
+            CascadeRemove(index);
+        }
+
+        /// <summary>
+        /// Delete the given index and all dependent repositories' index as well
+        /// </summary>
+        /// <param name="index">The index to delete</param>
+        internal sealed override void CascadeRemove(int index)
+        {
+            DataLock.EnterWriteLock();
+            Thread.MemoryBarrier();
+            Data.Remove(index);
+            Thread.MemoryBarrier();
+            for (int i = 0; i < Dependents.Length; i++)
+            {
+                Dependents[i].CascadeRemove(index);
             }
             DataLock.ExitWriteLock();
         }

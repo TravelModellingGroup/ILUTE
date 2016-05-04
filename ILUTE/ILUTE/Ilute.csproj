@@ -74,6 +74,7 @@
     <Compile Include="Interfaces\IExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteYearly.cs" />
     <Compile Include="Model\Demographic\AgePopulation.cs" />
+    <Compile Include="Model\Demographic\CleanupTheDead.cs" />
     <Compile Include="Model\Demographic\InitializePopulation.cs" />
     <Compile Include="Model\Rand.cs" />
     <Compile Include="Model\Utilities\CurrencyManager.cs" />
