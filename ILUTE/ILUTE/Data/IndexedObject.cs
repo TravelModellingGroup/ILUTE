@@ -26,6 +26,20 @@ namespace TMG.Ilute.Data
 {
     public abstract class IndexedObject
     {
+        /// <summary>
+        /// The unique index in the data source for this type
+        /// of object
+        /// </summary>
         public int Id { get; set; }
+
+        /// <summary>
+        /// This method will be invoked when this object
+        /// is being removed from the model.  All cleanup
+        /// should occur here.
+        /// </summary>
+        public virtual void BeingRemoved()
+        {
+            // the default is to do nothing
+        }
     }
 }

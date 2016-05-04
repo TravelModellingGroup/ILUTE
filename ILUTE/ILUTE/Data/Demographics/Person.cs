@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using TMG.Ilute.Data.LabourForce;
 
 namespace TMG.Ilute.Data.Demographics
 {
@@ -28,6 +29,11 @@ namespace TMG.Ilute.Data.Demographics
         public List<Person> Children { get; private set; }
 
         public List<Person> Siblings { get; private set; }
+
+        /// <summary>
+        /// The jobs currently being occupied by this individual
+        /// </summary>
+        public List<Job> Jobs { get; private set; }
 
         public int Age { get; set; }
 
@@ -45,26 +51,17 @@ namespace TMG.Ilute.Data.Demographics
 
         public Sex Sex { get; set; }
 
+        internal void RemoveJob(Job job)
+        {
+            Jobs.Remove(job);
+        }
+
         public Person()
         {
             Living = true;
             Children = new List<Person>(4);
             Siblings = new List<Person>(4);
-        }
-
-        internal void Remove()
-        {
-            var household = Family.Household;
-            var personsInFamily = Family.Persons;
-            personsInFamily.Remove(this);
-            if (personsInFamily.Count <= 0)
-            {
-                household.RemoveFamily(Family);
-                household.UpdateHouseholdType();
-            }
-            Father?.RemoveChild(this);
-            Mother?.RemoveChild(this);
-            Spouse?.RemoveSpouse(this);
+            Jobs = new List<Job>(1);
         }
 
         private void RemoveSpouse(Person person)
@@ -75,6 +72,46 @@ namespace TMG.Ilute.Data.Demographics
         private void RemoveChild(Person person)
         {
             Children.Remove(person);
+        }
+
+        public override void BeingRemoved()
+        {
+            // we need to fix the relationship with other people in the model
+            var household = Family.Household;
+            var personsInFamily = Family.Persons;
+            personsInFamily.Remove(this);
+            Father?.RemoveChild(this);
+            Mother?.RemoveChild(this);
+            Spouse?.RemoveSpouse(this);
+            foreach(var sibling in Siblings)
+            {
+                sibling.RemoveSibling(this);
+            }
+            foreach(var child in Children)
+            {
+                child.RemoveParent(this);
+            }
+            foreach(var job in Jobs)
+            {
+                job.OwnerRemoved();
+            }
+        }
+
+        private void RemoveParent(Person person)
+        {
+            if(Mother == person)
+            {
+                Mother = null; 
+            }
+            else
+            {
+                Father = null;
+            }
+        }
+
+        private void RemoveSibling(Person person)
+        {
+            Siblings.Remove(person);
         }
     }
 }

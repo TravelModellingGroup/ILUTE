@@ -90,6 +90,7 @@ Household:
             LoadDwellings();
             LoadFamilies();
             WriteToLog("Finished Loading Demographic information");
+            WriteToLog("Processing Loaded Demographic information");
         }
 
         private void LoadLog()
@@ -157,7 +158,7 @@ Household:
                         Dwelling d = new Dwelling();
                         householdRepo.AddNew(dwellingid, h);
                         dwellingRepo.AddNew(dwellingid, d);
-                        h.Dwelling = dwellingid;
+                        h.Dwelling = d;
                         h.HouseholdType = ConvertHouseholdType(hhcomp);
                         d.Exists = true;
                         d.Rooms = rooms;

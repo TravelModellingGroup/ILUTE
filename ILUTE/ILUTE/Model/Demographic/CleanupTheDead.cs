@@ -61,9 +61,8 @@ namespace TMG.Ilute.Model.Demographic
         public void Execute(int year)
         {
             List<Person> personsToKill = GetPersonsToKill(Persons.GiveData());
-            List<Family> familiesToRemove = GetFamiliesToRemove(personsToKill);
             RemoveFromRepository(personsToKill, Persons.GiveData());
-            RemoveFromRepository(familiesToRemove, Families.GiveData());
+            RemoveFromRepository(GetFamiliesToRemove(personsToKill), Families.GiveData());
         }
 
         private List<Person> GetPersonsToKill(Repository<Person> persons)
@@ -88,16 +87,18 @@ namespace TMG.Ilute.Model.Demographic
                 // remove each person from their families
                 foreach (var person in personsToKill)
                 {
-                    person.Remove();
+                    bool anyAlive = false;
                     var family = person.Family;
-                    var household = family.Household;
-                    var personsInFamily = family.Persons;
-                    personsInFamily.Remove(person);
-                    if (personsInFamily.Count <= 0)
+                    foreach(var p in family.Persons)
+                    {
+                        if(p.Living)
+                        {
+                            anyAlive = true;
+                        }
+                    }
+                    if (!anyAlive)
                     {
                         ret.Add(family);
-                        household.RemoveFamily(family);
-                        household.UpdateHouseholdType();
                     }
                 }
             }

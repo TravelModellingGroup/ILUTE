@@ -22,9 +22,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMG.Ilute.Data.Demographics;
+
 namespace TMG.Ilute.Data.Housing
 {
-    public class Dwelling : IndexedObject
+    public sealed class Dwelling : IndexedObject
     {
         /// <summary>
         /// Does this dwelling still exist?
@@ -36,9 +38,19 @@ namespace TMG.Ilute.Data.Housing
         /// </summary>
         public int Rooms { get; set; }
 
+        public Household Household { get; set; }
+
         /// <summary>
         /// The number of dollars
         /// </summary>
         public Money Value { get; set; }
+
+        public override void BeingRemoved()
+        {
+            if (Household != null)
+            {
+                Household.Dwelling = null;
+            }
+        }
     }
 }

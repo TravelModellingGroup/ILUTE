@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMG.Ilute.Data.Demographics;
 
 namespace TMG.Ilute.Data.LabourForce
 {
@@ -32,7 +33,7 @@ namespace TMG.Ilute.Data.LabourForce
 
         public int WorkExperienceRequired { get; set; }
 
-        public int Owner { get; set; }
+        public Person Owner { get; set; }
 
         /// <summary>
         /// TODO: Set this to some enumeration?
@@ -43,5 +44,18 @@ namespace TMG.Ilute.Data.LabourForce
         /// TODO: Set this to some enumeration?
         /// </summary>
         public int IndustryClassification { get; set; }
+
+        public override void BeingRemoved()
+        {
+            if(Owner != null)
+            {
+                Owner.RemoveJob(this);
+            }
+        }
+
+        internal void OwnerRemoved()
+        {
+            Owner = null;
+        }
     }
 }

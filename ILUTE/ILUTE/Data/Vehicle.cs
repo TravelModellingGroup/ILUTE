@@ -67,5 +67,10 @@ namespace TMG.Ilute.Data
         /// In M^3
         /// </summary>
         public float LuggageCapacity { get; set; }
+
+        public override void BeingRemoved()
+        {
+            
+        }
     }
 }

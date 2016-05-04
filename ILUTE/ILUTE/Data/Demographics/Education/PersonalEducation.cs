@@ -35,5 +35,9 @@ namespace TMG.Ilute.Data.Demographics.Education
 
         public EducationLevels CurrentlyUndertaking { get; set; }
 
+        public override void BeingRemoved()
+        {
+            // no additional cleanup is required    
+        }
     }
 }

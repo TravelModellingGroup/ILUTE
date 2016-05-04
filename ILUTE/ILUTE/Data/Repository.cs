@@ -204,6 +204,8 @@ namespace TMG.Ilute.Data
         /// <param name="index">The index to delete</param>
         internal sealed override void CascadeRemove(int index)
         {
+            Data[index].BeingRemoved();
+            // after the object is ready to be removed, do so
             DataLock.EnterWriteLock();
             Thread.MemoryBarrier();
             Data.Remove(index);

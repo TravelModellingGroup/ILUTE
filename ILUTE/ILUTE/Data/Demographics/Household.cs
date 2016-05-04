@@ -31,14 +31,14 @@ namespace TMG.Ilute.Data.Demographics
     public sealed class Household : IndexedObject
     {
         /// <summary>
-        /// 
+        /// All of the families that are in the household
         /// </summary>
         public List<Family> Families { get; private set; }
 
         /// <summary>
         /// The Dwelling the household lives in
         /// </summary>
-        public int Dwelling { get; set; }
+        public Dwelling Dwelling { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -56,30 +56,44 @@ namespace TMG.Ilute.Data.Demographics
         /// <summary>
         /// Invoke this when a household is changed
         /// </summary>
-        internal void UpdateHouseholdType()
+        private void UpdateHouseholdType()
         {
-            
-            if(Families.Count == 1)
+            HouseholdComposition newType;
+            if (Families.Count == 1)
             {
-                throw new NotImplementedException();
+                newType = (Families[0].Persons.Count == 1) ? HouseholdComposition.SingleIndividuals : HouseholdComposition.SingleFamily;
             }
-            else if(Families.Count <= 0)
+            else if (Families.Count <= 0)
             {
-                HouseholdType = HouseholdComposition.NoFamilies;
+                newType = HouseholdComposition.NoFamilies;
             }
             else
             {
                 bool allIndividuals = true;
                 for (int i = 0; i < Families.Count; i++)
                 {
-                    
+                    if (Families[i].Persons.Count > 1)
+                    {
+                        allIndividuals = false;
+                    }
                 }
+                newType = allIndividuals ? HouseholdComposition.MultiIndividuals : HouseholdComposition.MultiFamily;
             }
+            HouseholdType = newType;
         }
 
         public void RemoveFamily(Family family)
         {
             Families.Remove(family);
+            UpdateHouseholdType();
+        }
+
+        public override void BeingRemoved()
+        {
+            if (Dwelling != null)
+            {
+                Dwelling.Household = null;
+            }
         }
     }
 }

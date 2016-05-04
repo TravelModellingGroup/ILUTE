@@ -36,5 +36,10 @@ namespace TMG.Ilute.Data.Demographics
         {
             Persons = new List<Person>(2);
         }
+
+        public override void BeingRemoved()
+        {
+            Household.RemoveFamily(this);
+        }
     }
 }
