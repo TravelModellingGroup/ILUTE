@@ -27,7 +27,8 @@ using XTMF;
 
 namespace TMG.Ilute.Model.Utilities
 {
-
+    [ModuleInformation(Description = @"This module is designed to load in information for ILUTE in the format (Year/(year*12+month)) TAB (Data).
+    When using the module as a data source everything is converted into months.")]
     public class TemporalDataLoader : IDataSource<SparseArray<float>>
     {
         [RootModule]
@@ -76,28 +77,41 @@ namespace TMG.Ilute.Model.Utilities
             using (CsvReader reader = new CsvReader(LoadFrom))
             {
                 int columns;
-                if(Headers)
+                if (Headers)
                 {
                     reader.LoadLine();
                 }
-                while(reader.LoadLine(out columns))
+                while (reader.LoadLine(out columns))
                 {
-                    if(columns >= 2)
+                    if (columns >= 2)
                     {
+                        bool year = false;
                         int time;
                         float entry;
                         reader.Get(out time, 0);
                         reader.Get(out entry, 1);
-                        if(time < startMonth)
+                        if (time < startMonth)
                         {
                             // convert year to month
                             time = time * 12;
+                            year = true;
                         }
-                        if(time < startMonth || time >= endMonth)
+                        if (time < startMonth || time >= endMonth)
                         {
                             throw new XTMFRuntimeException($"While loading data in '{Name}' we came across a month = '{time}' that isn't in the model's time-frame.");
                         }
-                        flatData[time - startMonth] = entry;
+                        if (year)
+                        {
+                            for (int i = 0; i < 12; i++)
+                            {
+                                flatData[time - startMonth + i] = entry;
+                            }
+
+                        }
+                        else
+                        {
+                            flatData[time - startMonth] = entry;
+                        }
                     }
                 }
             }
