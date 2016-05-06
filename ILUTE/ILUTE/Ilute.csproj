@@ -80,6 +80,7 @@
     <Compile Include="Model\Utilities\CurrencyManager.cs" />
     <Compile Include="Model\Utilities\ExecutionLog.cs" />
     <Compile Include="Model\Utilities\RemoteDataSource.cs" />
+    <Compile Include="Model\Utilities\TemporalDataLoader.cs" />
     <Compile Include="MultiYearTravelDemandModel.cs" />
     <Compile Include="Data\Demographics\Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
