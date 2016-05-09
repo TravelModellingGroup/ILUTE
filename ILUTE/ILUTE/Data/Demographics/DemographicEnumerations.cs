@@ -39,4 +39,22 @@ namespace TMG.Ilute.Data.Demographics
         MultiIndividuals,
         NoFamilies
     };
+
+    public enum LabourForceStatus
+    {
+        Employed,
+        Unemployed,
+        NotInLabourForce,
+        NotApplicable
+    };
+
+    public enum MaritalStatus
+    {
+        Single,
+        Married,
+        MarriedSpouseOutOfSimulation,
+        Divorced,
+        Widowed
+    };
+
 }

@@ -45,7 +45,11 @@ namespace TMG.Ilute.Data.Demographics
 
         public Family Family { get; set; }
 
+        public MaritalStatus MaritalStatus { get; set; }
+
         public Household Household { get; set; }
+
+        public LabourForceStatus LabourForceStatus { get; set; }
 
         public bool Living { get; set; }
 

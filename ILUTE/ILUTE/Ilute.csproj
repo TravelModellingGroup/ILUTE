@@ -67,6 +67,7 @@
     <Compile Include="Data\Housing\HousingEnumerations.cs" />
     <Compile Include="Data\LabourForce\Job.cs" />
     <Compile Include="Data\IndexedObject.cs" />
+    <Compile Include="Data\LabourForce\LabourForceEnumerations.cs" />
     <Compile Include="Data\Repository.cs" />
     <Compile Include="Data\Demographics\Family.cs" />
     <Compile Include="Data\Demographics\Household.cs" />

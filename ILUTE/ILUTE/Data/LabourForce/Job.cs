@@ -27,23 +27,17 @@ namespace TMG.Ilute.Data.LabourForce
 {
     public class Job : IndexedObject
     {
-        Date StartDate { get; set; }
+        public Date StartDate { get; set; }
 
-        Money Salary { get; set; }
+        public Money Salary { get; set; }
 
         public int WorkExperienceRequired { get; set; }
 
         public Person Owner { get; set; }
 
-        /// <summary>
-        /// TODO: Set this to some enumeration?
-        /// </summary>
-        public int OccupationClassification { get; set; }
+        public OccupationClassification OccupationClassification { get; set; }
 
-        /// <summary>
-        /// TODO: Set this to some enumeration?
-        /// </summary>
-        public int IndustryClassification { get; set; }
+        public IndustryClassification IndustryClassification { get; set; }
 
         public override void BeingRemoved()
         {
