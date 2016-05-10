@@ -90,7 +90,6 @@ Household:
             LoadDwellings();
             LoadFamilies();
             WriteToLog("Finished Loading Demographic information");
-            WriteToLog("Processing Loaded Demographic information");
         }
 
         private void LoadLog()
@@ -125,7 +124,7 @@ Household:
             var householdRepo = LoadRepository(RepositoryHousehold);
             var dwellingRepo = LoadRepository(RepositoryDwellings);
             var initialDate = new Date(InitialYear, 0);
-            using (var reader = new CsvReader(InitialHouseholdFile))
+            using (var reader = new CsvReader(InitialHouseholdFile, true))
             {
                 int columns;
                 if (FilesContainHeaders)
@@ -212,7 +211,7 @@ Household:
             using (var familyContext = familyRepo.GetMultiAccessContext())
             using (var personContext = personRepo.GetMultiAccessContext())
             using (var hhldContext = householdRepo.GetMultiAccessContext())
-            using (var reader = new CsvReader(InitialFamilyFile))
+            using (var reader = new CsvReader(InitialFamilyFile, true))
             {
                 int columns;
                 if (FilesContainHeaders)
@@ -223,11 +222,17 @@ Household:
                 {
                     if (columns > 3)
                     {
-                        int familyId, dwellingId;
+                        int familyId, dwellingId, ageM, ageF;
                         reader.Get(out familyId, 0);
                         reader.Get(out dwellingId, 2);
+                        reader.Get(out ageM, 14);
+                        reader.Get(out ageF, 17);
                         // if the family is being used, update the index
-                        var family = familyContext[familyId];
+                        Family family;
+                        if (!familyContext.TryGet(familyId, out family))
+                        {
+                            throw new XTMFRuntimeException($"In '{Name}' we tried to load family data for a family that does not exist!");
+                        }
                         // if there is no dwelling we can't initialize them
                         if (dwellingId < 0)
                         {
@@ -236,9 +241,66 @@ Household:
                         Household h = hhldContext[dwellingId];
                         family.Household = h;
                         h.Families.Add(family);
+                        BuildFamilyStructure(family, ageM, ageF);
                     }
                 }
             }
+        }
+
+        private void BuildFamilyStructure(Family family, int ageCategoryMale, int ageCategoryFemale)
+        {
+            var persons = family.Persons;
+            // if the age category for the female is 
+            var father = ageCategoryFemale < 8 ? GetParent(persons, Sex.Male) : null;
+            var mother = ageCategoryMale < 8 ? GetParent(persons, Sex.Female) : null;
+            List<Person> siblings = new List<Person>(persons.Count - 2);
+            // build siblingList
+            foreach(var person in persons)
+            {
+                if(person != father && person != mother)
+                {
+                    person.Father = father;
+                    person.Mother = mother;
+                    siblings.Add(person);
+                }
+            }
+            // Assign siblings
+            foreach (var person in persons)
+            {
+                if (person != father && person != mother)
+                {
+                    person.Siblings.AddRange(siblings);
+                }
+            }
+            //assign children
+            if (father != null)
+            {
+                father.Children.AddRange(siblings);
+                father.Spouse = mother;
+            }
+            if (mother != null)
+            {
+                mother.Children.AddRange(siblings);
+                mother.Spouse = father;
+            }
+        }
+
+        private static Person GetParent(List<Person> persons, Sex gender)
+        {
+            int oldestFemale = -1;
+            int maxAge = 0;
+            for (int i = 0; i < persons.Count; i++)
+            {
+                if (persons[i].Sex == gender)
+                {
+                    if (persons[i].Age > maxAge)
+                    {
+                        maxAge = persons[i].Age;
+                        oldestFemale = i;
+                    }
+                }
+            }
+            return oldestFemale >= 0 ? persons[oldestFemale] : null;
         }
 
         private void LoadPersons()
@@ -247,7 +309,7 @@ Household:
             var personRepo = LoadRepository(RepositoryPerson);
             var familyRepo = LoadRepository(RepositoryFamily);
             int personsWithNegativeFamilyIndex = 0;
-            using (var reader = new CsvReader(InitialPersonFile))
+            using (var reader = new CsvReader(InitialPersonFile, true))
             {
                 /* (Columns)
                 00  personid,	pumiid, familyid,	dwellingid,	prov,	cmapust,	hhclass,	htype,	unitsp,	hhincp,
@@ -290,8 +352,8 @@ Household:
                         reader.Get(out psot, 40);
                         reader.Get(out trnuc, 41);
                         reader.Get(out dgree, 42);
-                        Family personsFamily;
 
+                        Family personsFamily;
                         // if they are living alone create a new family for them
                         if (familyid < 0)
                         {
