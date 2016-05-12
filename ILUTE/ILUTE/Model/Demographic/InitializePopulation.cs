@@ -109,7 +109,7 @@ Household:
             Log?.WriteToLog(msg);
         }
 
-        private T LoadRepository<T>(IDataSource<T> source)
+        private static T LoadRepository<T>(IDataSource<T> source)
         {
             if (!source.Loaded)
             {
@@ -269,7 +269,13 @@ Household:
             {
                 if (person != father && person != mother)
                 {
-                    person.Siblings.AddRange(siblings);
+                    foreach (var sibling in siblings)
+                    {
+                        if (sibling != person)
+                        {
+                            person.Siblings.Add(sibling);
+                        }
+                    }
                 }
             }
             //assign children

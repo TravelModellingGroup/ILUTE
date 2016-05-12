@@ -55,15 +55,13 @@ namespace TMG.Ilute.Model.Utilities
 
         public T GiveData()
         {
-            return Data;
+            return Linked.AcquireResource<T>();
         }
 
-        private T Data;
 
         public void LoadData()
         {
-            T data = Linked.AcquireResource<T>();
-            Data = data;
+
         }
 
         private IResource Link(string resourceName)

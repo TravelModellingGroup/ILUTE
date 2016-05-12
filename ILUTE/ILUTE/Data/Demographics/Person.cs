@@ -47,8 +47,6 @@ namespace TMG.Ilute.Data.Demographics
 
         public MaritalStatus MaritalStatus { get; set; }
 
-        public Household Household { get; set; }
-
         public LabourForceStatus LabourForceStatus { get; set; }
 
         public bool Living { get; set; }
@@ -116,6 +114,17 @@ namespace TMG.Ilute.Data.Demographics
         private void RemoveSibling(Person person)
         {
             Siblings.Remove(person);
+        }
+
+        internal void AddChild(Person baby)
+        {
+            foreach(var child in Children)
+            {
+                if(!child.Siblings.Contains(baby))
+                {
+                    child.Siblings.Add(baby);
+                }
+            }
         }
     }
 }
