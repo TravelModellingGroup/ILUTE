@@ -58,8 +58,7 @@ namespace TMG.Ilute.Model.Demographic
         [SubModelInformation(Required = true, Description = "The log to save the write to.")]
         public IDataSource<ExecutionLog> LogSource;
 
-        [RunParameter("First Year", 1987, "The first year to run the model for.")]
-        public int FirstYear;
+        private int FirstYear;
 
         [RunParameter("Random Seed", 12345u, "The seed to use for the random number generator.")]
         public uint Seed;
@@ -83,6 +82,8 @@ namespace TMG.Ilute.Model.Demographic
 
         public void BeforeFirstYear(int firstYear)
         {
+            // this model executes in the second year since the population is known during synthesis
+            FirstYear = firstYear + 1;
             // Seed the Random Number Generator
             RandomGenerator = new Rand(Seed);
             // load in the data we will use for rates
@@ -129,11 +130,6 @@ namespace TMG.Ilute.Model.Demographic
                 {
                     var pick = RandomGenerator.NextFloat();
                     var index = GetDataIndex(person.Age, person.MaritalStatus, deltaYear);
-                    if(index < 0 || index >= BirthRateData.Length)
-                    {
-                        Console.WriteLine();
-                        throw new Exception();
-                    }
                     if (pick < BirthRateData[index])
                     {
                         havingAChild.Add(person);

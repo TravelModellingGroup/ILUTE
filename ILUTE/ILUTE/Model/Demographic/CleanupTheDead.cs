@@ -27,7 +27,7 @@ using XTMF;
 
 namespace TMG.Ilute.Model.Demographic
 {
-    [ModuleInformation(Description = "This module will remove all persons who have died in the current year.")]
+    [ModuleInformation(Description = "This module will remove all persons who have died in the current year.  This also cleans up any families that are empty.")]
     public class CleanupTheDead : IExecuteYearly
     {
 
@@ -82,23 +82,26 @@ namespace TMG.Ilute.Model.Demographic
         {
             var ret = new List<Family>();
             using (var families = Families.GiveData().GetMultiAccessContext())
-            using (var households = Households.GiveData().GetMultiAccessContext())
             {
                 // remove each person from their families
                 foreach (var person in personsToKill)
                 {
                     bool anyAlive = false;
                     var family = person.Family;
-                    foreach(var p in family.Persons)
+
+                    foreach (var p in family.Persons)
                     {
-                        if(p.Living)
+                        if (p.Living)
                         {
                             anyAlive = true;
                         }
                     }
                     if (!anyAlive)
                     {
-                        ret.Add(family);
+                        if (ret.Contains(family))
+                        {
+                            ret.Add(family);
+                        }
                     }
                 }
             }
@@ -108,6 +111,7 @@ namespace TMG.Ilute.Model.Demographic
         private static void RemoveFromRepository<T>(List<T> toRemove, Repository<T> toRemoveFrom)
             where T : IndexedObject
         {
+            // check for duplicates
             foreach (var remove in toRemove)
             {
                 toRemoveFrom.Remove(remove.Id);

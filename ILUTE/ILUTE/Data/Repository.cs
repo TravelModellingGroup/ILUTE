@@ -123,6 +123,7 @@ namespace TMG.Ilute.Data
         {
             DataLock.EnterWriteLock();
             Thread.MemoryBarrier();
+            data.Id = index;
             Data.Add(index, data);
             // If the index is equal to or higher than the highest index so far, increase that index
             Highest = Math.Max(index + 1, Highest);
@@ -139,7 +140,8 @@ namespace TMG.Ilute.Data
         {
             DataLock.EnterWriteLock();
             Thread.MemoryBarrier();
-            int index = Interlocked.Increment(ref Highest);
+            int index = Interlocked.Increment(ref Highest) - 1;
+            data.Id = index;
             Data.Add(index, data);
             Thread.MemoryBarrier();
             for (int i = 0; i < Dependents.Length; i++)
@@ -204,11 +206,19 @@ namespace TMG.Ilute.Data
         /// <param name="index">The index to delete</param>
         internal sealed override void CascadeRemove(int index)
         {
-            Data[index].BeingRemoved();
             // after the object is ready to be removed, do so
             DataLock.EnterWriteLock();
             Thread.MemoryBarrier();
-            Data.Remove(index);
+            T element;
+            if (!Data.TryGetValue(index, out element))
+            {
+                throw new XTMFRuntimeException($"In {Name} we were unable to find data at index {index} in order to retrieve it!");
+            }
+            if (element != null)
+            {
+                element.BeingRemoved();
+                Data.Remove(index);
+            }
             Thread.MemoryBarrier();
             for (int i = 0; i < Dependents.Length; i++)
             {
