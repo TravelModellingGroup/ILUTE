@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using XTMF;
 
 namespace TMG.Ilute.Data.Demographics
 {
@@ -32,6 +33,10 @@ namespace TMG.Ilute.Data.Demographics
         /// </summary>
         public Household Household { get; set; }
 
+        public Person FemaleHead { get; set; }
+
+        public Person MaleHead { get; set; }
+
         public Family()
         {
             Persons = new List<Person>(2);
@@ -40,6 +45,47 @@ namespace TMG.Ilute.Data.Demographics
         public override void BeingRemoved()
         {
             Household.RemoveFamily(this);
+        }
+
+        public void RemovePerson(Person personToRemove)
+        {
+            Persons.Remove(personToRemove);
+            if (personToRemove == FemaleHead)
+            {
+                FemaleHead = null;
+            }
+            else if (personToRemove == MaleHead)
+            {
+                MaleHead = null;
+            }
+
+            if (FemaleHead == null && MaleHead == null && Persons.Count > 0)
+            {
+                UpdateFamilyHead();
+            }
+        }
+
+        private void UpdateFamilyHead()
+        {
+
+            int oldest = -1;
+            int age = -1;
+            for (int i = 0; i < Persons.Count; i++)
+            {
+                if (Persons[i].Age > age)
+                {
+                    oldest = i;
+                    age = Persons[i].Age;
+                }
+            }
+            if(Persons[oldest].Sex == Sex.Female)
+            {
+                FemaleHead = Persons[oldest];
+            }
+            else
+            {
+                MaleHead = Persons[oldest];
+            }
         }
     }
 }

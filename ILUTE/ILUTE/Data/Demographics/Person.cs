@@ -81,7 +81,7 @@ namespace TMG.Ilute.Data.Demographics
             // we need to fix the relationship with other people in the model
             var household = Family.Household;
             var personsInFamily = Family.Persons;
-            personsInFamily.Remove(this);
+            Family.RemovePerson(this);
             Father?.RemoveChild(this);
             Mother?.RemoveChild(this);
             Spouse?.RemoveSpouse(this);
@@ -99,9 +99,9 @@ namespace TMG.Ilute.Data.Demographics
             }
         }
 
-        private void RemoveParent(Person person)
+        private void RemoveParent(Person parent)
         {
-            if(Mother == person)
+            if(Mother == parent)
             {
                 Mother = null; 
             }

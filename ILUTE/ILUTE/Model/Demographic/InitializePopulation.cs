@@ -244,6 +244,23 @@ Household:
                         BuildFamilyStructure(family, ageM, ageF);
                     }
                 }
+                // Set all single families to have themselves as the female/male head of the household
+                foreach(var fIndex in familyContext.GetKeys())
+                {
+                    var family = familyContext[fIndex];
+                    var persons = family.Persons;
+                    if (persons.Count == 1)
+                    {
+                        if(family.FemaleHead == null && persons[0].Sex == Sex.Female)
+                        {
+                            family.FemaleHead = persons[0];
+                        }
+                        else if(family.MaleHead == null && persons[0].Sex == Sex.Male)
+                        {
+                            family.MaleHead = persons[0];
+                        }
+                    }
+                }
             }
         }
 
@@ -251,8 +268,10 @@ Household:
         {
             var persons = family.Persons;
             // if the age category for the female is 
-            var father = ageCategoryFemale < 8 ? GetParent(persons, Sex.Male) : null;
-            var mother = ageCategoryMale < 8 ? GetParent(persons, Sex.Female) : null;
+            var father = ageCategoryMale > 9 ? GetParent(persons, Sex.Male) : null;
+            var mother = ageCategoryFemale > 9 ? GetParent(persons, Sex.Female) : null;
+            family.FemaleHead = mother;
+            family.MaleHead = father;
             if(father != null && mother != null)
             {
                 father.MaritalStatus = MaritalStatus.Married;
@@ -298,7 +317,7 @@ Household:
 
         private static Person GetParent(List<Person> persons, Sex gender)
         {
-            int oldestFemale = -1;
+            int oldestIndex = -1;
             int maxAge = 0;
             for (int i = 0; i < persons.Count; i++)
             {
@@ -307,11 +326,11 @@ Household:
                     if (persons[i].Age > maxAge)
                     {
                         maxAge = persons[i].Age;
-                        oldestFemale = i;
+                        oldestIndex = i;
                     }
                 }
             }
-            return oldestFemale >= 0 ? persons[oldestFemale] : null;
+            return oldestIndex >= 0 ? persons[oldestIndex] : null;
         }
 
         private void LoadPersons()
@@ -320,6 +339,7 @@ Household:
             var personRepo = LoadRepository(RepositoryPerson);
             var familyRepo = LoadRepository(RepositoryFamily);
             int personsWithNegativeFamilyIndex = 0;
+            List<Family> toAddAfterwards = new List<Family>();
             using (var reader = new CsvReader(InitialPersonFile, true))
             {
                 /* (Columns)
@@ -376,7 +396,7 @@ Household:
                             }
                             personsWithNegativeFamilyIndex++;
                             personsFamily = new Family();
-                            familyRepo.AddNew(personsFamily);
+                            toAddAfterwards.Add(personsFamily);
                         }
                         else if (!familyRepo.TryGet(familyid, out personsFamily))
                         {
@@ -390,6 +410,11 @@ Household:
                         // add the person to their family
                         personsFamily.Persons.Add(p);
                     }
+                }
+                // fill in the rest
+                foreach (var family in toAddAfterwards)
+                {
+                    familyRepo.AddNew(family);
                 }
                 WriteToLog("Total number of families loaded: " + familyRepo.Count);
                 WriteToLog("Total number of persons loaded: " + personRepo.Count);

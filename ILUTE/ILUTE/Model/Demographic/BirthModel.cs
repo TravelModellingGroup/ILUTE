@@ -148,6 +148,7 @@ namespace TMG.Ilute.Model.Demographic
                 baby.Father = mother.Spouse;
                 persons.AddNew(baby);
                 var originalFamily = mother.Family;
+                baby.Family = originalFamily;
                 if (mother.Children.Count <= 1)
                 {
                     switch(originalFamily.Persons.Count)
@@ -173,12 +174,9 @@ namespace TMG.Ilute.Model.Demographic
                                 }
                                 else
                                 {
-                                    // in this case we need to detect if she is going to need to create a new household
-                                    // if either her mother or father are in this household, then she is going to need to make a new one
-                                    if(    (mother.Mother != null && originalFamily.Persons.Contains(mother.Mother)) 
-                                        || (mother.Father != null && originalFamily.Persons.Contains(mother.Father)))
+                                    // if the mother is not the female head of the family she needs to generate a new one
+                                    if(mother != mother.Family.FemaleHead)
                                     {
-                                        // if a parent is contained
                                         AddMotherAndBabyToNewFamily(families, mother, baby, originalFamily);
                                     }
                                     else
@@ -192,17 +190,12 @@ namespace TMG.Ilute.Model.Demographic
                 }
                 else
                 {
-                    // if the mother already had children update them to have this baby as a sibling
-                    foreach(var child in mother.Children)
-                    {
-                        child.Siblings.Add(baby);
-                    }
-                    // add this baby to the siblings
-                    baby.Siblings.AddRange(mother.Children);
+                    // add this baby its siblings
+                    originalFamily.Persons.Add(baby);
                 }
+                baby.Siblings.AddRange(mother.Children);
                 mother.AddChild(baby);
                 mother.Spouse?.AddChild(baby);
-                baby.Family = mother.Family;
             }
             log.WriteToLog($"Finished processing {numberOfChildrenBorn} births for Year {year}");
         }
@@ -218,6 +211,8 @@ namespace TMG.Ilute.Model.Demographic
             newFamily.Household = household;
             originalFamily.Persons.Remove(mother);
             mother.Family = newFamily;
+            baby.Family = newFamily;
+            newFamily.FemaleHead = mother;
             families.AddNew(newFamily);
         }
 
