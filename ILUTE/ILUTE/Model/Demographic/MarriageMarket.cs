@@ -28,6 +28,7 @@ using TMG.Ilute.Model.Utilities;
 using TMG.Input;
 using Datastructure;
 using System.Collections.Concurrent;
+using TMG.Functions;
 
 namespace TMG.Ilute.Model.Demographic
 {
@@ -41,7 +42,7 @@ namespace TMG.Ilute.Model.Demographic
         private float[] MarriageParticipationRateData;
 
         private const int MaximumAgeCategoryForMarriage = 75;
-        private const float PartisipationModification = 1.2f;
+
         private Rand RandomGenerator;
 
         [SubModelInformation(Required = true, Description = "The log to save the write to.")]
@@ -52,6 +53,9 @@ namespace TMG.Ilute.Model.Demographic
 
         [SubModelInformation(Required = true, Description = "The repository containing simulated persons.")]
         public IDataSource<Repository<Family>> FamilyRepository;
+
+        [RunParameter("Participation Modification", 1.0f, "Apply a modifier to the participation rates.")]
+        public float ParticipationModification;
 
         private int FirstYear;
 
@@ -99,10 +103,8 @@ namespace TMG.Ilute.Model.Demographic
                     }
                 }
                 MarriageParticipationRateData = data.ToArray();
-                for (int i = 0; i < MarriageParticipationRateData.Length; i++)
-                {
-                    MarriageParticipationRateData[i] *= PartisipationModification;
-                }
+                // apply the rate modifier
+                VectorHelper.Multiply(MarriageParticipationRateData, MarriageParticipationRateData, ParticipationModification);
             }
         }
 

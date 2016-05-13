@@ -268,8 +268,8 @@ Household:
         {
             var persons = family.Persons;
             // if the age category for the female is 
-            var father = ageCategoryMale > 9 ? GetParent(persons, Sex.Male) : null;
-            var mother = ageCategoryFemale > 9 ? GetParent(persons, Sex.Female) : null;
+            var father = ageCategoryMale < 99 ? GetParent(persons, Sex.Male) : null;
+            var mother = ageCategoryFemale < 99 ? GetParent(persons, Sex.Female) : null;
             family.FemaleHead = mother;
             family.MaleHead = father;
             if(father != null && mother != null)
