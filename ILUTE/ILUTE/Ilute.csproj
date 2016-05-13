@@ -81,6 +81,7 @@
     <Compile Include="Model\Demographic\InitializePopulation.cs" />
     <Compile Include="Model\Demographic\MarriageMarket.cs" />
     <Compile Include="Model\Demographic\Validation\GatherBirthsByAge.cs" />
+    <Compile Include="Model\Demographic\Validation\GatherMarriageStatusByYear.cs" />
     <Compile Include="Model\Demographic\Validation\GatherPopulationByAges.cs" />
     <Compile Include="Model\Rand.cs" />
     <Compile Include="Model\Utilities\CurrencyManager.cs" />

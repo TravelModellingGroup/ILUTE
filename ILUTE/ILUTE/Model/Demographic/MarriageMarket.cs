@@ -119,9 +119,72 @@ namespace TMG.Ilute.Model.Demographic
             AddPeopleToMarket(year, out males, out females);
             log.WriteToLog($"Marriage Market: Year {year}, Males Selected {males.Count}, Females Selected {females.Count}");
             // 2) Match people
+            MatchPeopleRandomly(males, females);
+        }
 
-            // 3) Resolve picks
+        private void MatchPeopleRandomly(List<Person> males, List<Person> females)
+        {
+            var families = LoadSource(FamilyRepository);
+            int couplesToProduce = Math.Min(males.Count, females.Count);
+            Shuffle(males);
+            Shuffle(females);
+            for (int i = 0; i < couplesToProduce; i++)
+            {
+                Marry(males[i], females[i], families);
+            }
+        }
 
+        private void Shuffle(List<Person> persons)
+        {
+            for (int i = 0; i < persons.Count; i++)
+            {
+                int randomIndex = (int)(RandomGenerator.NextFloat() * (persons.Count - i)) + i;
+                var temp = persons[randomIndex];
+                persons[randomIndex] = persons[i];
+                persons[i] = temp;
+            }
+        }
+
+        private void Marry(Person male, Person female, Repository<Family> families)
+        {
+            male.MaritalStatus = MaritalStatus.Married;
+            female.MaritalStatus = MaritalStatus.Married;
+            male.Spouse = female;
+            female.Spouse = male;
+            // if the female is a family head, add the male to her family
+            // otherwise add the female to the male family
+            // if they are both not family heads, create a new family
+            // add it to the male's household
+            if (female.Family.FemaleHead == female)
+            {
+                male.Family.RemovePerson(male);
+                male.Family = female.Family;
+                female.Family.Persons.Add(male);
+                female.Family.MaleHead = male;
+            }
+            else if(male.Family.MaleHead == male)
+            {
+                female.Family.RemovePerson(female);
+                female.Family = male.Family;
+                male.Family.Persons.Add(female);
+                male.Family.FemaleHead = female;
+            }
+            else
+            {
+                var f = new Family();
+                f.FemaleHead = female;
+                f.MaleHead = male;
+                f.Persons.Add(female);
+                f.Persons.Add(male);
+                f.Household = male.Family.Household;
+                f.Household.Families.Add(f);
+
+                male.Family.RemovePerson(male);
+                female.Family.RemovePerson(female);
+                male.Family = f;
+                female.Family = f;
+                families.AddNew(f);
+            }
         }
 
         private static int GetDataIndex(int age, Sex sex, MaritalStatus status, int deltaYear)
@@ -156,6 +219,7 @@ namespace TMG.Ilute.Model.Demographic
             var deltaYear = FirstYear - year;
             foreach(var person in persons)
             {
+                // only people who are living this year are allowed into the market
                 if(person.Living)
                 {
                     if (person.Age >= MinimumAgeForMarriage)
