@@ -54,7 +54,7 @@ namespace TMG.Ilute.Model.Demographic
         [RunParameter("Random Seed", 12345u, "The seed to use for the random number generator.")]
         public uint Seed;
 
-        private float[] BirthRateData;
+        private float[] DeathRateData;
 
         Rand RandomGenerator;
 
@@ -97,7 +97,7 @@ namespace TMG.Ilute.Model.Demographic
                         data.Add(temp);
                     }
                 }
-                BirthRateData = data.ToArray();
+                DeathRateData = data.ToArray();
             }
         }
 
@@ -131,7 +131,7 @@ namespace TMG.Ilute.Model.Demographic
                 {
                     var pick = RandomGenerator.NextFloat();
                     var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
-                    if (pick < BirthRateData[index])
+                    if (pick < DeathRateData[index])
                     {
                         person.Living = false;
                         Interlocked.Increment(ref numberOfDeaths);

@@ -253,6 +253,11 @@ Household:
             // if the age category for the female is 
             var father = ageCategoryFemale < 8 ? GetParent(persons, Sex.Male) : null;
             var mother = ageCategoryMale < 8 ? GetParent(persons, Sex.Female) : null;
+            if(father != null && mother != null)
+            {
+                father.MaritalStatus = MaritalStatus.Married;
+                mother.MaritalStatus = MaritalStatus.Married;
+            }
             List<Person> siblings = new List<Person>(persons.Count - 2);
             // build siblingList
             foreach(var person in persons)
