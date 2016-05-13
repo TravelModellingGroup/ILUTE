@@ -42,10 +42,10 @@ namespace TMG.Ilute.Model.Demographic
         public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
 
         private const float ProbabilityOfBabyBeingFemale = 0.51f;
+
         private const int MaximumAgeCategoryForBirth = 45;
 
-        [RunParameter("Age of Maturity", 15, "The minimum age to have a child at.")]
-        public int AgeOfMaturity;
+        private const int AgeOfMaturity = 15;
 
         [SubModelInformation(Required = true, Description = "The repository containing simulated persons.")]
         public IDataSource<Repository<Person>> PersonRepository;

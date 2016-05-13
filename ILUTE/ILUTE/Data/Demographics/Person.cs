@@ -69,6 +69,7 @@ namespace TMG.Ilute.Data.Demographics
         private void RemoveSpouse(Person person)
         {
             Spouse = null;
+            MaritalStatus = MaritalStatus.Widowed;
         }
 
         private void RemoveChild(Person person)
