@@ -58,15 +58,6 @@ namespace TMG.Ilute.Model.Demographic
 
         Rand RandomGenerator;
 
-        private static T LoadSource<T>(IDataSource<T> source)
-        {
-            if (!source.Loaded)
-            {
-                source.LoadData();
-            }
-            return source.GiveData();
-        }
-
         public string Name { get; set; }
 
         public float Progress { get; set; }
@@ -113,9 +104,9 @@ namespace TMG.Ilute.Model.Demographic
                 return;
             }
             int deltaYear = year - FirstYear;
-            var log = LoadSource(LogSource);
+            var log = Repository.GetRepository(LogSource);
             log.WriteToLog($"Finding people who will be dying for Year {year}");
-            var persons = LoadSource(PersonRepository);
+            var persons = Repository.GetRepository(PersonRepository);
 
             int numberOfDeaths = 0;
 

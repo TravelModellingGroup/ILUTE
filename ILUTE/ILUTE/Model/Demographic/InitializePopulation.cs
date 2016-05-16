@@ -109,20 +109,11 @@ Household:
             Log?.WriteToLog(msg);
         }
 
-        private static T LoadRepository<T>(IDataSource<T> source)
-        {
-            if (!source.Loaded)
-            {
-                source.LoadData();
-            }
-            return source.GiveData();
-        }
-
         private void LoadDwellings()
         {
             WriteToLog("Starting to Load Dwellings/Households");
-            var householdRepo = LoadRepository(RepositoryHousehold);
-            var dwellingRepo = LoadRepository(RepositoryDwellings);
+            var householdRepo = Repository.GetRepository(RepositoryHousehold);
+            var dwellingRepo = Repository.GetRepository(RepositoryDwellings);
             var initialDate = new Date(InitialYear, 0);
             using (var reader = new CsvReader(InitialHouseholdFile, true))
             {
@@ -205,9 +196,9 @@ Household:
         private void LoadFamilies()
         {
             WriteToLog("Starting to Load Families");
-            var personRepo = LoadRepository(RepositoryPerson);
-            var familyRepo = LoadRepository(RepositoryFamily);
-            var householdRepo = LoadRepository(RepositoryHousehold);
+            var personRepo = Repository.GetRepository(RepositoryPerson);
+            var familyRepo = Repository.GetRepository(RepositoryFamily);
+            var householdRepo = Repository.GetRepository(RepositoryHousehold);
             using (var familyContext = familyRepo.GetMultiAccessContext())
             using (var personContext = personRepo.GetMultiAccessContext())
             using (var hhldContext = householdRepo.GetMultiAccessContext())
@@ -336,8 +327,8 @@ Household:
         private void LoadPersons()
         {
             WriteToLog("Starting to Load Persons");
-            var personRepo = LoadRepository(RepositoryPerson);
-            var familyRepo = LoadRepository(RepositoryFamily);
+            var personRepo = Repository.GetRepository(RepositoryPerson);
+            var familyRepo = Repository.GetRepository(RepositoryFamily);
             int personsWithNegativeFamilyIndex = 0;
             List<Family> toAddAfterwards = new List<Family>();
             using (var reader = new CsvReader(InitialPersonFile, true))

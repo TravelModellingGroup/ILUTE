@@ -74,7 +74,7 @@
     <Compile Include="ExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteYearly.cs" />
-    <Compile Include="Model\Demographic\AgePopulation.cs" />
+    <Compile Include="Model\Demographic\UpdateDemographicsToNextYear.cs" />
     <Compile Include="Model\Demographic\BirthModel.cs" />
     <Compile Include="Model\Demographic\CleanupTheDead.cs" />
     <Compile Include="Model\Demographic\DeathModel.cs" />

@@ -37,6 +37,8 @@ namespace TMG.Ilute.Data.Demographics
 
         public Person MaleHead { get; set; }
 
+        public Date MarriageDate { get; set; }
+
         public Family()
         {
             Persons = new List<Person>(2);

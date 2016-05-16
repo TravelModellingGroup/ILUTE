@@ -68,15 +68,6 @@ namespace TMG.Ilute.Model.Demographic
 
         Rand RandomGenerator;
 
-        private static T LoadSource<T>(IDataSource<T> source)
-        {
-            if (!source.Loaded)
-            {
-                source.LoadData();
-            }
-            return source.GiveData();
-        }
-
         public void AfterYearlyExecute(int year)
         {
         }
@@ -118,10 +109,10 @@ namespace TMG.Ilute.Model.Demographic
                 return;
             }
             int deltaYear = year - FirstYear;
-            var log = LoadSource(LogSource);
+            var log = Repository.GetRepository(LogSource);
             log.WriteToLog($"Finding people who will be giving birth for Year {year}");
-            var persons = LoadSource(PersonRepository);
-            var families = LoadSource(FamilyRepository);
+            var persons = Repository.GetRepository(PersonRepository);
+            var families = Repository.GetRepository(FamilyRepository);
 
             List<Person> havingAChild = new List<Person>();
             // first find all persons who will be having a child

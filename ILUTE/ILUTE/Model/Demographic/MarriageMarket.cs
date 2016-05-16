@@ -63,15 +63,6 @@ namespace TMG.Ilute.Model.Demographic
         public uint Seed;
         private const int MinimumAgeForMarriage = 16;
 
-        private static T LoadSource<T>(IDataSource<T> source)
-        {
-            if (!source.Loaded)
-            {
-                source.LoadData();
-            }
-            return source.GiveData();
-        }
-
         public string Name { get; set; }
 
         public float Progress { get; set; }
@@ -114,25 +105,27 @@ namespace TMG.Ilute.Model.Demographic
 
         public void Execute(int year)
         {
-            var log = LoadSource(LogSource);
+            var log = Repository.GetRepository(LogSource);
             log.WriteToLog($"Finding people who will be giving birth for Year {year}");
             // 1) Get people who want to enter the market
             List<Person> males, females;
             AddPeopleToMarket(year, out males, out females);
             log.WriteToLog($"Marriage Market: Year {year}, Males Selected {males.Count}, Females Selected {females.Count}");
             // 2) Match people
-            MatchPeopleRandomly(males, females);
+            var currentDate = new Date(year, 0);
+            MatchPeopleRandomly(males, females, currentDate);
         }
 
-        private void MatchPeopleRandomly(List<Person> males, List<Person> females)
+        private void MatchPeopleRandomly(List<Person> males, List<Person> females, Date currentDate)
         {
-            var families = LoadSource(FamilyRepository);
+            var families = Repository.GetRepository(FamilyRepository);
             int couplesToProduce = Math.Min(males.Count, females.Count);
             Shuffle(males);
             Shuffle(females);
             for (int i = 0; i < couplesToProduce; i++)
             {
                 Marry(males[i], females[i], families);
+                females[i].Family.MarriageDate = currentDate;
             }
         }
 
@@ -217,7 +210,7 @@ namespace TMG.Ilute.Model.Demographic
         {
             males = new List<Person>();
             females = new List<Person>();
-            var persons = LoadSource(PersonRepository);
+            var persons = Repository.GetRepository(PersonRepository);
             var deltaYear = FirstYear - year;
             foreach(var person in persons)
             {

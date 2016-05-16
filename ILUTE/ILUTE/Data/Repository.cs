@@ -40,6 +40,21 @@ namespace TMG.Ilute.Data
         internal abstract void MakeNew(int index);
 
         internal abstract void CascadeRemove(int index);
+
+        /// <summary>
+        /// Get a copy of the repository from the data source loading it if nessissary
+        /// </summary>
+        /// <typeparam name="T">The type of data stored</typeparam>
+        /// <param name="source">The datasource to be loading</param>
+        /// <returns>The now loaded data source's data</returns>
+        public static T GetRepository<T>(IDataSource<T> source)
+        {
+            if (!source.Loaded)
+            {
+                source.LoadData();
+            }
+            return source.GiveData();
+        }
     }
 
     /// <summary>

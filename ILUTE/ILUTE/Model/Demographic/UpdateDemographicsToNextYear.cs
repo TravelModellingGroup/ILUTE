@@ -28,8 +28,8 @@ using XTMF;
 
 namespace TMG.Ilute.Model.Demographic
 {
-    [ModuleInformation(Description = "This module will increase the age of the population by one.  Deceased persons are also aged unless specified otherwise.")]
-    public class AgePopulation : IExecuteYearly
+    [ModuleInformation(Description = "This module will update the population's information to the next year.")]
+    public class UpdateDemographicsToNextYear : IExecuteYearly
     {
         [RunParameter("Increase Age of Deceased", true, "If this is false a person will not age after they die.")]
         public bool IncreaseAgeOfDeceased;
@@ -40,9 +40,9 @@ namespace TMG.Ilute.Model.Demographic
 
         public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
 
-        public IResource PersonRepository;
+        public IDataSource<Repository<Person>> PersonRepository;
 
-        public Repository<Person> TestRepo;
+        public IDataSource<Repository<Family>> FamilyRepository;
 
         public void AfterYearlyExecute(int year)
         {
@@ -59,7 +59,12 @@ namespace TMG.Ilute.Model.Demographic
 
         public void Execute(int year)
         {
-            var repo = PersonRepository.AcquireResource<Repository<Person>>();
+            UpdateAge();
+        }
+
+        private void UpdateAge()
+        {
+            var repo = Repository.GetRepository(PersonRepository);
             if (IncreaseAgeOfDeceased)
             {
                 foreach (var person in repo)
@@ -85,11 +90,6 @@ namespace TMG.Ilute.Model.Demographic
 
         public bool RuntimeValidation(ref string error)
         {
-            if (!PersonRepository.CheckResourceType<Repository<Person>>())
-            {
-                error = "In '" + Name + "' the person repository was not of type PersonRepository!";
-                return false;
-            }
             return true;
         }
     }

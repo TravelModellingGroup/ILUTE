@@ -52,15 +52,6 @@ namespace TMG.Ilute.Model.Demographic.Validation
 
         public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
 
-        private static T LoadRepository<T>(IDataSource<T> source)
-        {
-            if (!source.Loaded)
-            {
-                source.LoadData();
-            }
-            return source.GiveData();
-        }
-
         public void AfterYearlyExecute(int year)
         {
         }
@@ -91,7 +82,7 @@ namespace TMG.Ilute.Model.Demographic.Validation
         {
             // gather the data
             int[][][] categories = new int[2][][];
-            var persons = LoadRepository<Repository<Person>>(PersonRepository);
+            var persons = Repository.GetRepository(PersonRepository);
             // male/female -> Marriage Status -> ages 0 to (99+)
             for (int i = 0; i < categories.Length; i++)
             {
