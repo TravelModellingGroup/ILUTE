@@ -236,17 +236,17 @@ Household:
                     }
                 }
                 // Set all single families to have themselves as the female/male head of the household
-                foreach(var fIndex in familyContext.GetKeys())
+                foreach (var fIndex in familyContext.GetKeys())
                 {
                     var family = familyContext[fIndex];
                     var persons = family.Persons;
                     if (persons.Count == 1)
                     {
-                        if(family.FemaleHead == null && persons[0].Sex == Sex.Female)
+                        if (family.FemaleHead == null && persons[0].Sex == Sex.Female)
                         {
                             family.FemaleHead = persons[0];
                         }
-                        else if(family.MaleHead == null && persons[0].Sex == Sex.Male)
+                        else if (family.MaleHead == null && persons[0].Sex == Sex.Male)
                         {
                             family.MaleHead = persons[0];
                         }
@@ -263,16 +263,17 @@ Household:
             var mother = ageCategoryFemale < 99 ? GetParent(persons, Sex.Female) : null;
             family.FemaleHead = mother;
             family.MaleHead = father;
-            if(father != null && mother != null)
+            if (father != null && mother != null)
             {
                 father.MaritalStatus = MaritalStatus.Married;
                 mother.MaritalStatus = MaritalStatus.Married;
+                family.MarriageDate = GetMarriageLengthBasedOnAges(father.Age, mother.Age);
             }
             List<Person> siblings = new List<Person>(persons.Count - 2);
             // build siblingList
-            foreach(var person in persons)
+            foreach (var person in persons)
             {
-                if(person != father && person != mother)
+                if (person != father && person != mother)
                 {
                     person.Father = father;
                     person.Mother = mother;
@@ -304,6 +305,36 @@ Household:
                 mother.Children.AddRange(siblings);
                 mother.Spouse = father;
             }
+        }
+
+        private const float MARRIAGE_DURATION_MALE_AGE = 0.705490675261981f;
+        private const float MARRIAGE_DURATION_FEMALE_AGE = 0.22971574761528f;
+        private const float MARRIAGE_DURATION_CONSTANT = -20.8149795101583f;
+        private const float MARRIAGE_DURATION_ABS_DIFF = -0.511453224647831f;
+        private const float MARRIAGE_DURATION_ABS_DIFF_SQ = -0.0225707853357835f;
+
+        public Date GetMarriageLengthBasedOnAges(int ageMale, int ageFemale)
+        {
+            // The expression below was estimated from the General Social Surveys (1995 and 2001)
+            // The data was filtered for couples married at 1986
+            // The durations of the marriages were regressed based on the husband's and wive's ages
+            // Use the estimated regression parameters, as well as the mean and standard deviations of the residuals
+            // to estimate a wedding date for the couple
+
+            float absDiff = Math.Abs(ageMale - ageFemale);
+
+            // Get the duration based on the male and female's age
+            float duration = MARRIAGE_DURATION_MALE_AGE * (float)ageMale
+                + MARRIAGE_DURATION_FEMALE_AGE * (float)ageFemale
+                + MARRIAGE_DURATION_ABS_DIFF * absDiff
+                + MARRIAGE_DURATION_ABS_DIFF_SQ * absDiff * absDiff
+                + MARRIAGE_DURATION_CONSTANT;
+
+            // Round up or down
+            duration = (float)Math.Round(duration);
+            // If < 0, assume that the married occured this year
+            duration = Math.Max(duration, 0.0f);
+            return new Date(InitialYear - (int)duration, 0);
         }
 
         private static Person GetParent(List<Person> persons, Sex gender)

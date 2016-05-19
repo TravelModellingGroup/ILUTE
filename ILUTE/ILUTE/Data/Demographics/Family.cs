@@ -80,7 +80,7 @@ namespace TMG.Ilute.Data.Demographics
                     age = Persons[i].Age;
                 }
             }
-            if(Persons[oldest].Sex == Sex.Female)
+            if (Persons[oldest].Sex == Sex.Female)
             {
                 FemaleHead = Persons[oldest];
             }
@@ -88,6 +88,30 @@ namespace TMG.Ilute.Data.Demographics
             {
                 MaleHead = Persons[oldest];
             }
+        }
+
+        public void Divorse(Repository<Family> familyRepo)
+        {
+            var female = FemaleHead;
+            var male = MaleHead;
+            // no longer married
+            MarriageDate = new Date();
+            MaleHead = null;
+            // add the people to
+            female.ExSpouses.Add(male);
+            male.ExSpouses.Add(female);
+            // unlink the persons
+            female.Spouse = null;
+            male.Spouse = null;
+            female.MaritalStatus = MaritalStatus.Divorced;
+            male.MaritalStatus = MaritalStatus.Divorced;
+            // create the male's new family object
+            male.Family = new Family() { Household = Household, MaleHead = male, FemaleHead = null };
+            male.Family.Persons.Add(male);
+            // add the family to the repository
+            familyRepo.AddNew(male.Family);
+            // and add them into the household as a separate unit
+            Household?.Families.Add(male.Family);
         }
     }
 }

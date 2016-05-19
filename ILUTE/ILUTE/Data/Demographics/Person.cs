@@ -52,6 +52,7 @@ namespace TMG.Ilute.Data.Demographics
         public bool Living { get; set; }
 
         public Sex Sex { get; set; }
+        public List<Person> ExSpouses { get; internal set; }
 
         internal void RemoveJob(Job job)
         {
@@ -63,6 +64,7 @@ namespace TMG.Ilute.Data.Demographics
             Living = true;
             Children = new List<Person>(4);
             Siblings = new List<Person>(4);
+            ExSpouses = new List<Person>(0);
             Jobs = new List<Job>(1);
         }
 
