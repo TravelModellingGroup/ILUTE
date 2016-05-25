@@ -326,57 +326,57 @@ namespace TMG.Ilute.Data
 
         public struct RepositoryEnumerator : IEnumerator<T>
         {
-            private readonly Dictionary<int, T> Data;
-            private readonly List<int> Keys;
+            private Dictionary<int, T>.Enumerator LocalEnumerator;
             private readonly Repository<T> Repo;
-            private int Index;
             private volatile bool IsDisposed;
-            private readonly int Length;
-
 
             public RepositoryEnumerator(Repository<T> repo)
             {
                 IsDisposed = false;
                 Repo = repo;
-                Data = repo.Data;
-                Keys = Data.Keys.ToList();
-                Length = Keys.Count;
-                Index = 0;
                 repo.DataLock.EnterReadLock();
+                LocalEnumerator = Repo.Data.GetEnumerator();
             }
 
             public T Current
             {
-                get { return Data[Keys[Index++]]; }
+                get
+                {
+                    return LocalEnumerator.Current.Value;
+                }
             }
 
             object IEnumerator.Current
             {
-                get { return Data[Keys[Index++]]; }
+                get
+                {
+                    return LocalEnumerator.Current.Value;
+                }
             }
 
             public bool MoveNext()
             {
-                return (Index < Keys.Count);
-            }
-
-            public void Reset()
-            {
-                Index = 0;
+                return LocalEnumerator.MoveNext();
             }
 
             public void Dispose()
             {
-                lock (Data)
+                lock (Repo.Data)
                 {
                     if (IsDisposed)
                     {
                         throw new InvalidOperationException("Can not dispose an enumeration more than once!");
                     }
+                    LocalEnumerator.Dispose();
                     IsDisposed = true;
                 }
                 Thread.MemoryBarrier();
                 Repo.DataLock.ExitReadLock();
+            }
+
+            public void Reset()
+            {
+                ((IEnumerator)LocalEnumerator).Reset();
             }
         }
 

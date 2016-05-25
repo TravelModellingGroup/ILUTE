@@ -86,8 +86,13 @@ Household:
         {
             LoadLog();
             WriteToLog("Loading Demographic information");
-            LoadPersons();
-            LoadDwellings();
+            Parallel.Invoke(() =>
+           {
+               LoadPersons();
+           }, () =>
+           {
+               LoadDwellings();
+           });
             LoadFamilies();
             WriteToLog("Finished Loading Demographic information");
         }
