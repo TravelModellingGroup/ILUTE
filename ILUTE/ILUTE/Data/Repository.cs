@@ -42,7 +42,7 @@ namespace TMG.Ilute.Data
         internal abstract void CascadeRemove(int index);
 
         /// <summary>
-        /// Get a copy of the repository from the data source loading it if nessissary
+        /// Get a copy of the repository from the data source loading it if necessary
         /// </summary>
         /// <typeparam name="T">The type of data stored</typeparam>
         /// <param name="source">The datasource to be loading</param>
