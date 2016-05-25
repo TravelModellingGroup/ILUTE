@@ -47,14 +47,11 @@ namespace TMG.Ilute.Model
             mt[0] = seed;
             for (int i = 1; i < mt.Length; i++)
             {
-                mt[i] =
-                (uint)(1812433253U * (mt[i - 1] ^ (mt[i - 1] >> 30)) + i);
                 // See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. 
                 // In the previous versions, MSBs of the seed affect   
                 // only MSBs of the array mt[].                        
-                // 2002/01/09 modified by Makoto Matsumoto             
-                mt[i] &= 0xffffffffU;
-                // for >32 bit machines
+                mt[i] =
+                (uint)(1812433253U * (mt[i - 1] ^ (mt[i - 1] >> 30)) + i);   
             }
         }
 
@@ -73,37 +70,45 @@ namespace TMG.Ilute.Model
 
         private uint Next()
         {
-            uint y;
-            var localMti = System.Threading.Interlocked.Increment(ref mti);
-            localMti = mti;
-            if (localMti >= N)
+            if (mti >= N)
             {
                 /* generate N words at one time */
                 int kk;
-
-                for (kk = 0; kk < N - M; kk++)
+                uint y;
+                unsafe
                 {
-                    y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
-                    mt[kk] = mt[kk + M] ^ (y >> 1) ^ mag01[y & 0x1U];
+                    fixed (uint* pmt = mt)
+                    fixed (uint* pmag = mag01)
+                    {
+                        for (kk = 0; kk < N - M; kk++)
+                        {
+                            y = (pmt[kk] & UPPER_MASK) | (pmt[kk + 1] & LOWER_MASK);
+                            y = pmt[kk + M] ^ (y >> 1) ^ pmag[y & 0x1U];
+                            // Tempering
+                            y ^= (y >> 11);
+                            y ^= (y << 7) & 0x9d2c5680U;
+                            y ^= (y << 15) & 0xefc60000U;
+                            y ^= (y >> 18);
+                            pmt[kk] = y;
+                        }
+                        for (; kk < N - 1; kk++)
+                        {
+                            y = (pmt[kk] & UPPER_MASK) | (pmt[kk + 1] & LOWER_MASK);
+                            y = pmt[kk + (M - N)] ^ (y >> 1) ^ pmag[y & 0x1U];
+                            // Tempering
+                            y ^= (y >> 11);
+                            y ^= (y << 7) & 0x9d2c5680U;
+                            y ^= (y << 15) & 0xefc60000U;
+                            y ^= (y >> 18);
+                            pmt[kk] = y;
+                        }
+                        y = (pmt[N - 1] & UPPER_MASK) | (pmt[0] & LOWER_MASK);
+                        pmt[N - 1] = pmt[M - 1] ^ (y >> 1) ^ pmag[y & 0x1U];
+                        mti = 0;
+                    }
                 }
-                for (; kk < N - 1; kk++)
-                {
-                    y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
-                    mt[kk] = mt[kk + (M - N)] ^ (y >> 1) ^ mag01[y & 0x1U];
-                }
-                y = (mt[N - 1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
-                mt[N - 1] = mt[M - 1] ^ (y >> 1) ^ mag01[y & 0x1U];
-
-                mti = localMti = 0;
-                System.Threading.Thread.MemoryBarrier();
             }
-            y = mt[localMti];
-            // Tempering
-            y ^= (y >> 11);
-            y ^= (y << 7) & 0x9d2c5680U;
-            y ^= (y << 15) & 0xefc60000U;
-            y ^= (y >> 18);
-            return y;
+            return mt[mti++];
         }
     }
 }
