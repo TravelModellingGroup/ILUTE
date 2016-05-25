@@ -61,7 +61,7 @@ namespace TMG.Ilute.Data
     /// This class is designed to facilitate the creation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class Repository<T> : Repository, IDataSource<Repository<T>>
+    public sealed class Repository<T> : Repository, IDataSource<Repository<T>>, IEnumerable<T>
         where T : IndexedObject
     {
 
@@ -454,6 +454,16 @@ namespace TMG.Ilute.Data
         public RepositoryEnumerator GetEnumerator()
         {
             return new RepositoryEnumerator(this);
+        }
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

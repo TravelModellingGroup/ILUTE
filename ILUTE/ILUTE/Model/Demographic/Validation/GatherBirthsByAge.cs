@@ -90,7 +90,7 @@ namespace TMG.Ilute.Model.Demographic.Validation
             var families = LoadRepository<Repository<Family>>(FamilyRepository);
             // male/female -> ages 0 to (99+)
             var vector = new int[100];
-            foreach (var family in families)
+            Parallel.ForEach(families, (Family family) =>
             {
                 var persons = family.Persons;
                 if (persons.Count > 1 && HasNewborn(persons))
@@ -107,7 +107,7 @@ namespace TMG.Ilute.Model.Demographic.Validation
                         Interlocked.Increment(ref vector[0]);
                     }
                 }
-            }
+            });
             //write the data
             var start = year + ",";
             for (int j = 0; j < vector.Length; j++)

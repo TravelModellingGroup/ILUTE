@@ -95,7 +95,7 @@ namespace TMG.Ilute.Model.Demographic.Validation
             // male/female -> ages 0 to (99+)
             categories[0] = new int[100];
             categories[1] = new int[100];
-            foreach (var person in persons)
+            Parallel.ForEach(persons, (Person person) =>
             {
                 if (person.Living == Living)
                 {
@@ -103,7 +103,7 @@ namespace TMG.Ilute.Model.Demographic.Validation
                     var age = Math.Max(Math.Min(person.Age, vector.Length - 1), 0);
                     Interlocked.Increment(ref vector[age]);
                 }
-            }
+            });
             //write the data
             for(int sex = 0; sex < 2; sex++)
             {
