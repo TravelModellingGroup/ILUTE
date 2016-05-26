@@ -330,11 +330,11 @@ namespace TMG.Ilute.Data
             private readonly Repository<T> Repo;
             private volatile bool IsDisposed;
 
+
             public RepositoryEnumerator(Repository<T> repo)
             {
                 IsDisposed = false;
                 Repo = repo;
-                repo.DataLock.EnterReadLock();
                 LocalEnumerator = Repo.Data.GetEnumerator();
             }
 
@@ -370,8 +370,6 @@ namespace TMG.Ilute.Data
                     LocalEnumerator.Dispose();
                     IsDisposed = true;
                 }
-                Thread.MemoryBarrier();
-                Repo.DataLock.ExitReadLock();
             }
 
             public void Reset()
