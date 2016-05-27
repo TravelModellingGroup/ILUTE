@@ -66,7 +66,7 @@ namespace TMG.Ilute.Model.Demographic
 
         private float[] BirthRateData;
 
-        Rand RandomGenerator;
+        RandomStream RandomGenerator;
 
         public void AfterYearlyExecute(int year)
         {
@@ -77,7 +77,7 @@ namespace TMG.Ilute.Model.Demographic
             // this model executes in the second year since the population is known during synthesis
             FirstYear = firstYear + 1;
             // Seed the Random Number Generator
-            RandomGenerator = new Rand(Seed);
+            RandomGenerator = new RandomStream(Seed);
             // load in the data we will use for rates
             using (var reader = new CsvReader(BirthRatesFileLocation, true))
             {
@@ -116,79 +116,85 @@ namespace TMG.Ilute.Model.Demographic
 
             List<Person> havingAChild = new List<Person>();
             // first find all persons who will be having a child
-            foreach(var person in persons)
-            {
-                if(person.Sex == Sex.Female && person.Age >= AgeOfMaturity && person.Living)
-                {
-                    var pick = RandomGenerator.NextFloat();
-                    var index = GetDataIndex(person.Age, person.MaritalStatus, deltaYear);
-                    if (pick < BirthRateData[index])
-                    {
-                        havingAChild.Add(person);
-                    }
-                }
-            }
+            RandomGenerator.ExecuteWithProvider((rand) =>
+           {
+               foreach (var person in persons)
+               {
+                   if (person.Sex == Sex.Female && person.Age >= AgeOfMaturity && person.Living)
+                   {
+                       var pick = rand.NextFloat();
+                       var index = GetDataIndex(person.Age, person.MaritalStatus, deltaYear);
+                       if (pick < BirthRateData[index])
+                       {
+                           havingAChild.Add(person);
+                       }
+                   }
+               }
+           });
             log.WriteToLog($"Processing Births for Year {year}");
             var numberOfChildrenBorn = havingAChild.Count;
-            // process each person having a child
-            foreach (var mother in havingAChild)
-            {
-                // create the child
-                var baby = new Person();
-                baby.Sex = RandomGenerator.NextFloat() < ProbabilityOfBabyBeingFemale ? Sex.Female : Sex.Male;
-                baby.Mother = mother;
-                baby.Father = mother.Spouse;
-                persons.AddNew(baby);
-                var originalFamily = mother.Family;
-                baby.Family = originalFamily;
-                if (mother.Children.Count <= 1)
-                {
-                    switch(originalFamily.Persons.Count)
-                    {
-                        case 0:
-                        case 1:
+            RandomGenerator.ExecuteWithProvider((rand) =>
+           {
+                // process each person having a child
+                foreach (var mother in havingAChild)
+               {
+                    // create the child
+                    var baby = new Person();
+                   baby.Sex = rand.NextFloat() < ProbabilityOfBabyBeingFemale ? Sex.Female : Sex.Male;
+                   baby.Mother = mother;
+                   baby.Father = mother.Spouse;
+                   persons.AddNew(baby);
+                   var originalFamily = mother.Family;
+                   baby.Family = originalFamily;
+                   if (mother.Children.Count <= 1)
+                   {
+                       switch (originalFamily.Persons.Count)
+                       {
+                           case 0:
+                           case 1:
 
-                            {
-                                // if this family only has a single person in it there can be no father
+                               {
+                                    // if this family only has a single person in it there can be no father
 
-                                // In all cases, either the mother just needs to add her baby to her existing family
-                                originalFamily.Persons.Add(baby);
-                            }
-                            break;
-                        default:
-                            {
-                                // we need to see if this is going to make the mother leave her current family.
-                                var father = mother.Spouse;
-                                if(father != null)
-                                {
-                                    // if she already has a spouse then she is already in a family so we don't need the more expensive logic
+                                    // In all cases, either the mother just needs to add her baby to her existing family
                                     originalFamily.Persons.Add(baby);
-                                }
-                                else
-                                {
-                                    // if the mother is not the female head of the family she needs to generate a new one
-                                    if(mother != mother.Family.FemaleHead)
-                                    {
-                                        AddMotherAndBabyToNewFamily(families, mother, baby, originalFamily);
-                                    }
-                                    else
-                                    {
+                               }
+                               break;
+                           default:
+                               {
+                                    // we need to see if this is going to make the mother leave her current family.
+                                    var father = mother.Spouse;
+                                   if (father != null)
+                                   {
+                                        // if she already has a spouse then she is already in a family so we don't need the more expensive logic
                                         originalFamily.Persons.Add(baby);
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
-                else
-                {
-                    // add this baby its siblings
-                    originalFamily.Persons.Add(baby);
-                }
-                baby.Siblings.AddRange(mother.Children);
-                mother.AddChild(baby);
-                mother.Spouse?.AddChild(baby);
-            }
+                                   }
+                                   else
+                                   {
+                                        // if the mother is not the female head of the family she needs to generate a new one
+                                        if (mother != mother.Family.FemaleHead)
+                                       {
+                                           AddMotherAndBabyToNewFamily(families, mother, baby, originalFamily);
+                                       }
+                                       else
+                                       {
+                                           originalFamily.Persons.Add(baby);
+                                       }
+                                   }
+                               }
+                               break;
+                       }
+                   }
+                   else
+                   {
+                        // add this baby its siblings
+                        originalFamily.Persons.Add(baby);
+                   }
+                   baby.Siblings.AddRange(mother.Children);
+                   mother.AddChild(baby);
+                   mother.Spouse?.AddChild(baby);
+               }
+           });
             log.WriteToLog($"Finished processing {numberOfChildrenBorn} births for Year {year}");
         }
 

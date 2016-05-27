@@ -105,8 +105,8 @@ namespace TMG.Ilute.Model.Demographic
                 List<float> data = new List<float>();
                 while (reader.LoadLine(out columns))
                 {
-                    if(columns >= 2)
-                    { 
+                    if (columns >= 2)
+                    {
                         float temp;
                         reader.Get(out temp, 1);
                         data.Add(temp);
@@ -128,7 +128,7 @@ namespace TMG.Ilute.Model.Demographic
 
         public void Execute(int year)
         {
-            if(!LogSource.Loaded)
+            if (!LogSource.Loaded)
             {
                 LogSource.LoadData();
             }
@@ -136,38 +136,29 @@ namespace TMG.Ilute.Model.Demographic
             log.WriteToLog($"Starting divorce for year {year}");
             var families = Repository.GetRepository(Families);
             List<Family> toDivoce = new List<Family>();
-
-
-            var watch = Stopwatch.StartNew();
-            RandomGenerator.ExecuteWithEnumerable((stream) =>
+            RandomGenerator.ExecuteWithProvider((rand) =>
            {
-               var pick = stream.Current;
                foreach (var family in families)
                {
                    var female = family.FemaleHead;
                    var male = family.MaleHead;
-                    // if the family is married
-                    if (female != null && male != null && female.Spouse == male)
+                   // if the family is married
+                   if (female != null && male != null && female.Spouse == male)
                    {
+                       var pick = rand.NextFloat();
                        if (CheckIfShouldDivorse(pick, family, year))
                        {
                            toDivoce.Add(family);
-                           stream.MoveNext();
-                           pick = stream.Current;
                        }
                    }
                }
            });
-            watch.Stop();
             log.WriteToLog($"Finished computing candidates to divorce for year {year} with {toDivoce.Count} divorces.");
-            watch.Start();
             // After identifying all of the families to be divorced, do so.
             foreach (var family in toDivoce)
             {
                 family.Divorse(families);
             }
-            watch.Stop();
-            Console.WriteLine(watch.ElapsedTicks);
             log.WriteToLog("Finished divorcing all families.");
         }
 
@@ -181,11 +172,11 @@ namespace TMG.Ilute.Model.Demographic
             var coVariateVector = Math.Abs(male.Age - female.Age) < 5.0f ? WITHIN5YEARS : 0f;
             coVariateVector += GetHusbandCovariate(male, yearsMarried, currentYear);
             coVariateVector += GetWifeCovariate(female, yearsMarried, currentYear);
-            if(currentYear - yearsMarried < 1950)
+            if (currentYear - yearsMarried < 1950)
             {
                 coVariateVector += HMARRIEDBEFORE1950S + WMARRIEDBEFORE1950S;
             }
-            else if(currentYear - yearsMarried > 1980)
+            else if (currentYear - yearsMarried > 1980)
             {
                 //TODO: yes this is 1980 even though the variable is called 1960PLUS
                 coVariateVector += MARRIED1960PLUS;
@@ -199,19 +190,19 @@ namespace TMG.Ilute.Model.Demographic
             var v = 0.0f;
             var yearOfBirth = currentYear - male.Age;
             var ageAtOfMarriage = male.Age - yearsMarried;
-            if(yearOfBirth < 1945)
+            if (yearOfBirth < 1945)
             {
                 v += HBORNBEFORE1945;
             }
-            else if(yearOfBirth > 1959)
+            else if (yearOfBirth > 1959)
             {
                 v += HBORNAFTER1959;
             }
-            if(ageAtOfMarriage < 20)
+            if (ageAtOfMarriage < 20)
             {
                 v += HBEGUNUNDER20;
             }
-            if(male.ExSpouses.Count > 0)
+            if (male.ExSpouses.Count > 0)
             {
                 v += HPREDIV;
             }

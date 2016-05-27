@@ -21,6 +21,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,10 +36,25 @@ namespace TMG.Ilute.Model
     {
         private Rand BackendRandom;
         private uint BaseSeed;
-        private Thread GenerateRandomInBackground;
-        private BlockingCollection<float> NextNumbers;
         private IEnumerator<float> NextNumberEnumeration;
         private volatile bool Done = false;
+
+        public sealed class Provider
+        {
+            IEnumerator<float> Enumerator;
+            public Provider(IEnumerator<float> enumerator)
+            {
+                Enumerator = enumerator;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float NextFloat()
+            {
+                var ret = Enumerator.Current;
+                Enumerator.MoveNext();
+                return ret;
+            }
+        }
 
         public RandomStream(uint seed, int capacity = 1000)
         {
@@ -48,14 +64,27 @@ namespace TMG.Ilute.Model
             }
             BackendRandom = new Rand(seed);
             BaseSeed = seed;
-            NextNumbers = new BlockingCollection<float>();
-            NextNumberEnumeration = NextNumbers.GetConsumingEnumerable().GetEnumerator();
+            var nextNumbers = new BlockingCollection<float>(capacity);
+            NextNumberEnumeration = nextNumbers.GetConsumingEnumerable().GetEnumerator();
             new Thread(
                 () =>
                 {
-                    while (!Done)
+                    try
                     {
-                        NextNumbers.Add(BackendRandom.NextFloat());
+                        while (!Done)
+                        {
+                            var next = BackendRandom.NextFloat();
+                            while (nextNumbers.TryAdd(next, 500))
+                            {
+                                Thread.MemoryBarrier();
+                                if (!Done) return;
+                                break;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        nextNumbers.CompleteAdding();
                     }
                 })
             { IsBackground = true }.Start();
@@ -67,26 +96,15 @@ namespace TMG.Ilute.Model
             Dispose();
         }
 
-        public void ExecuteWithEnumerable(Action<IEnumerator<float>> executeWithStream)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ExecuteWithProvider(Action<Provider> executeWithStream)
         {
-            executeWithStream(NextNumberEnumeration);
-        }
-
-        public float NextFloat()
-        {
-            var ret = NextNumberEnumeration.Current;
-            NextNumberEnumeration.MoveNext();
-            return ret;
+            executeWithStream(new Provider(NextNumberEnumeration));
         }
 
         public void Dispose()
         {
             Done = true;
-            if (GenerateRandomInBackground != null)
-            {
-                GenerateRandomInBackground = null;
-                GenerateRandomInBackground.Abort();
-            }
         }
     }
 }
