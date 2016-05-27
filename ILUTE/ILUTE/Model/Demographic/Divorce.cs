@@ -18,9 +18,12 @@
 */
 using Datastructure;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TMG.Ilute.Data;
 using TMG.Ilute.Data.Demographics;
@@ -79,7 +82,7 @@ namespace TMG.Ilute.Model.Demographic
 
         private float[] DivorceData;
 
-        private Rand RandomGenerator;
+        private RandomStream RandomGenerator;
 
         [SubModelInformation(Required = true, Description = "")]
         public FileLocation DivorceRatesFile;
@@ -94,7 +97,7 @@ namespace TMG.Ilute.Model.Demographic
         public void BeforeFirstYear(int firstYear)
         {
             // Seed the Random Number Generator
-            RandomGenerator = new Rand(Seed);
+            RandomGenerator = new RandomStream(Seed, 1000);
             // load in the data we will use for rates
             using (var reader = new CsvReader(DivorceRatesFile, true))
             {
@@ -133,29 +136,42 @@ namespace TMG.Ilute.Model.Demographic
             log.WriteToLog($"Starting divorce for year {year}");
             var families = Repository.GetRepository(Families);
             List<Family> toDivoce = new List<Family>();
-            foreach(var family in families)
-            {
-                var female = family.FemaleHead;
-                var male = family.MaleHead;
-                // if the family is married
-                if (female != null && male != null && female.Spouse == male)
-                {
-                    if (CheckIfShouldDivorse(family, year))
-                    {
-                        toDivoce.Add(family);
-                    }
-                }
-            }
+
+
+            var watch = Stopwatch.StartNew();
+            RandomGenerator.ExecuteWithEnumerable((stream) =>
+           {
+               var pick = stream.Current;
+               foreach (var family in families)
+               {
+                   var female = family.FemaleHead;
+                   var male = family.MaleHead;
+                    // if the family is married
+                    if (female != null && male != null && female.Spouse == male)
+                   {
+                       if (CheckIfShouldDivorse(pick, family, year))
+                       {
+                           toDivoce.Add(family);
+                           stream.MoveNext();
+                           pick = stream.Current;
+                       }
+                   }
+               }
+           });
+            watch.Stop();
             log.WriteToLog($"Finished computing candidates to divorce for year {year} with {toDivoce.Count} divorces.");
+            watch.Start();
             // After identifying all of the families to be divorced, do so.
             foreach (var family in toDivoce)
             {
                 family.Divorse(families);
             }
+            watch.Stop();
+            Console.WriteLine(watch.ElapsedTicks);
             log.WriteToLog("Finished divorcing all families.");
         }
 
-        private bool CheckIfShouldDivorse(Family family, int currentYear)
+        private bool CheckIfShouldDivorse(float pick, Family family, int currentYear)
         {
             var female = family.FemaleHead;
             var male = family.MaleHead;
@@ -175,7 +191,7 @@ namespace TMG.Ilute.Model.Demographic
                 coVariateVector += MARRIED1960PLUS;
             }
             var divorceProbability = (1 - (float)Math.Pow(baseSurvival, Math.Exp(coVariateVector))) * DivorceParameter;
-            return (RandomGenerator.NextFloat() < divorceProbability);
+            return (pick < divorceProbability);
         }
 
         private float GetHusbandCovariate(Person male, int yearsMarried, int currentYear)

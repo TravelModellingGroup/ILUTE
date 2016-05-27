@@ -93,6 +93,7 @@
     <Compile Include="Model\Demographic\Validation\GatherMarriageStatusByYear.cs" />
     <Compile Include="Model\Demographic\Validation\GatherPopulationByAges.cs" />
     <Compile Include="Model\Rand.cs" />
+    <Compile Include="Model\RandomStream.cs" />
     <Compile Include="Model\Utilities\CurrencyManager.cs" />
     <Compile Include="Model\Utilities\DemographicDataLoader.cs" />
     <Compile Include="Model\Utilities\ExecutionLog.cs" />
