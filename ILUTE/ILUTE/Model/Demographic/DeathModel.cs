@@ -56,7 +56,7 @@ namespace TMG.Ilute.Model.Demographic
 
         private float[] DeathRateData;
 
-        Rand RandomGenerator;
+        RandomStream RandomGenerator;
 
         public string Name { get; set; }
 
@@ -73,7 +73,7 @@ namespace TMG.Ilute.Model.Demographic
             // this model executes in the second year since the population is known during synthesis
             FirstYear = firstYear + 1;
             // Seed the Random Number Generator
-            RandomGenerator = new Rand(Seed);
+            RandomGenerator = new RandomStream(Seed);
             // load in the data we will use for rates
             using (var reader = new CsvReader(DeathRatesFileLocation, true))
             {
@@ -107,30 +107,34 @@ namespace TMG.Ilute.Model.Demographic
             var log = Repository.GetRepository(LogSource);
             log.WriteToLog($"Finding people who will be dying for Year {year}");
             var persons = Repository.GetRepository(PersonRepository);
+            int toOutputNumberOfDeaths = 0;
 
-            int numberOfDeaths = 0;
-
-            // first find all persons who will be having a child
-            foreach (var person in persons)
-            {
-                if (person.Age > MaximumAge)
-                {
-                    person.Living = false;
-                    Interlocked.Increment(ref numberOfDeaths);
-                }
-                else
-                {
-                    var pick = RandomGenerator.NextFloat();
-                    var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
-                    if (pick < DeathRateData[index])
-                    {
-                        person.Living = false;
-                        Interlocked.Increment(ref numberOfDeaths);
-                    }
-                }
-            }
+            RandomGenerator.ExecuteWithProvider((rand) =>
+           {
+               int numberOfDeaths = 0;
+                // first find all persons who will be having a child
+                foreach (var person in persons)
+               {
+                   if (person.Age > MaximumAge)
+                   {
+                       person.Living = false;
+                       toOutputNumberOfDeaths++;
+                   }
+                   else
+                   {
+                       var pick = rand.NextFloat();
+                       var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
+                       if (pick < DeathRateData[index])
+                       {
+                           person.Living = false;
+                           toOutputNumberOfDeaths++;
+                       }
+                   }
+               }
+               toOutputNumberOfDeaths = numberOfDeaths;
+           });
             Thread.MemoryBarrier();
-            log.WriteToLog($"Number of deaths in {year}: {numberOfDeaths}");
+            log.WriteToLog($"Number of deaths in {year}: {toOutputNumberOfDeaths}");
         }
 
         private int GetDataIndex(int age, Sex sex, MaritalStatus status, int deltaYear)

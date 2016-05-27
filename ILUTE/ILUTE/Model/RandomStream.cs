@@ -39,23 +39,6 @@ namespace TMG.Ilute.Model
         private IEnumerator<float> NextNumberEnumeration;
         private volatile bool Done = false;
 
-        public sealed class Provider
-        {
-            IEnumerator<float> Enumerator;
-            public Provider(IEnumerator<float> enumerator)
-            {
-                Enumerator = enumerator;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float NextFloat()
-            {
-                var ret = Enumerator.Current;
-                Enumerator.MoveNext();
-                return ret;
-            }
-        }
-
         public RandomStream(uint seed, int capacity = 1000)
         {
             if (capacity <= 1)
@@ -88,7 +71,6 @@ namespace TMG.Ilute.Model
                     }
                 })
             { IsBackground = true }.Start();
-            NextNumberEnumeration.MoveNext();
         }
 
         ~RandomStream()
@@ -97,14 +79,23 @@ namespace TMG.Ilute.Model
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ExecuteWithProvider(Action<Provider> executeWithStream)
+        public void ExecuteWithProvider(Action<IEnumerator<float>> executeWithStream)
         {
-            executeWithStream(new Provider(NextNumberEnumeration));
+            executeWithStream(NextNumberEnumeration);
         }
 
         public void Dispose()
         {
             Done = true;
+        }
+    }
+
+    public static class IEnumOptimization
+    {
+        public static float NextFloat(this IEnumerator<float> us)
+        {
+            us.MoveNext();
+            return us.Current;
         }
     }
 }

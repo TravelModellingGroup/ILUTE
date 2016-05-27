@@ -43,7 +43,7 @@ namespace TMG.Ilute.Model.Demographic
 
         private const int MaximumAgeCategoryForMarriage = 75;
 
-        private Rand RandomGenerator;
+        private RandomStream RandomGenerator;
 
         [SubModelInformation(Required = true, Description = "The log to save the write to.")]
         public IDataSource<ExecutionLog> LogSource;
@@ -61,6 +61,7 @@ namespace TMG.Ilute.Model.Demographic
 
         [RunParameter("Random Seed", 12345u, "The seed to use for the random number generator.")]
         public uint Seed;
+
         private const int MinimumAgeForMarriage = 16;
 
         public string Name { get; set; }
@@ -78,7 +79,7 @@ namespace TMG.Ilute.Model.Demographic
             // this model executes in the second year since the population is known during synthesis
             FirstYear = firstYear + 1;
             // Seed the Random Number Generator
-            RandomGenerator = new Rand(Seed);
+            RandomGenerator = new RandomStream(Seed);
             // load in the data we will use for rates
             using (var reader = new CsvReader(MarriageRatesFileLocation, true))
             {
@@ -131,13 +132,16 @@ namespace TMG.Ilute.Model.Demographic
 
         private void Shuffle(List<Person> persons)
         {
-            for (int i = 0; i < persons.Count; i++)
-            {
-                int randomIndex = (int)(RandomGenerator.NextFloat() * (persons.Count - i)) + i;
-                var temp = persons[randomIndex];
-                persons[randomIndex] = persons[i];
-                persons[i] = temp;
-            }
+            RandomGenerator.ExecuteWithProvider((rand) =>
+           {
+               for (int i = 0; i < persons.Count; i++)
+               {
+                   int randomIndex = (int)(rand.NextFloat() * (persons.Count - i)) + i;
+                   var temp = persons[randomIndex];
+                   persons[randomIndex] = persons[i];
+                   persons[i] = temp;
+               }
+           });
         }
 
         private void Marry(Person male, Person female, Repository<Family> families)
@@ -208,31 +212,36 @@ namespace TMG.Ilute.Model.Demographic
 
         private void AddPeopleToMarket(int year, out List<Person> males, out List<Person> females)
         {
-            males = new List<Person>();
-            females = new List<Person>();
-            var persons = Repository.GetRepository(PersonRepository);
-            var deltaYear = FirstYear - year;
-            foreach(var person in persons)
-            {
-                // only people who are living this year are allowed into the market
-                if(person.Living)
-                {
-                    if (person.Age >= MinimumAgeForMarriage)
-                    {
-                        // index will be -1 if they are already married
-                        var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
-                        if(index >= 0)
-                        {
-                            // see if they chose to enter the market
-                            var pop = RandomGenerator.NextFloat();
-                            if(pop < MarriageParticipationRateData[index])
-                            {
-                                (person.Sex == Sex.Male ? males : females).Add(person);
-                            }
-                        }
-                    }
-                }
-            }
+            var localMales = new List<Person>();
+            var localFemales = new List<Person>();
+            RandomGenerator.ExecuteWithProvider((rand) =>
+           {
+               var persons = Repository.GetRepository(PersonRepository);
+               var deltaYear = FirstYear - year;
+               foreach (var person in persons)
+               {
+                   // only people who are living this year are allowed into the market
+                   if (person.Living)
+                   {
+                       if (person.Age >= MinimumAgeForMarriage)
+                       {
+                           // index will be -1 if they are already married
+                           var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
+                           if (index >= 0)
+                           {
+                               // see if they chose to enter the market
+                               var pop = rand.NextFloat();
+                               if (pop < MarriageParticipationRateData[index])
+                               {
+                                   (person.Sex == Sex.Male ? localMales : localFemales).Add(person);
+                               }
+                           }
+                       }
+                   }
+               }
+           });
+            males = localMales;
+            females = localFemales;
         }
 
 
