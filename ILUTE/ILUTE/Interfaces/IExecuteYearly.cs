@@ -24,12 +24,36 @@ using System.Threading.Tasks;
 using XTMF;
 namespace TMG.Ilute
 {
+    /// <summary>
+    /// This interface is used to describe a model that needs to be executed once per year
+    /// </summary>
     public interface IExecuteYearly : IModule
     {
+        /// <summary>
+        /// This method gets executed before the main processing of any year in the model
+        /// </summary>
+        /// <param name="firstYear">The first year that will be processed in the simulation</param>
         void BeforeFirstYear(int firstYear);
-        void BeforeYearlyExecute(int year);
-        void Execute(int year);
-        void AfterYearlyExecute(int year);
+        /// <summary>
+        /// This method gets executed before the primary workload for the current year
+        /// </summary>
+        /// <param name="currentYear">The year number that is currently being processed</param>
+        void BeforeYearlyExecute(int currentYear);
+        /// <summary>
+        /// This method gets executed for the primary workload in the current year
+        /// </summary>
+        /// <param name="currentYear">The year number that is currently being processed</param>
+        void Execute(int currentYear);
+        /// <summary>
+        /// This method gets executed once all of the models have been
+        /// executed for the current year.
+        /// </summary>
+        /// <param name="currentYear">The year number that is currently being processed</param>
+        void AfterYearlyExecute(int currentYear);
+        /// <summary>
+        /// This method is executed when all of the years have been processed
+        /// </summary>
+        /// <param name="finalYear">The year number that was the final year</param>
         void RunFinished(int finalYear);
     }
 }
