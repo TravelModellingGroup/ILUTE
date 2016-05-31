@@ -25,8 +25,19 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Model.Utilities
 {
+    /// <summary>
+    /// This class contains helper methods for loading in data for
+    /// the different models.
+    /// </summary>
     internal static class FileUtility
     {
+        /// <summary>
+        /// Load the data from each given text file and load in all of the data as a
+        /// separate data point in the array.
+        /// </summary>
+        /// <param name="fileName">The name of the file to load in</param>
+        /// <param name="header">Does the file contain a header?</param>
+        /// <returns>Each column converted into an integer</returns>
         internal static int[] LoadAllDataToInt(string fileName, bool header)
         {
             using (var reader = new CsvReader(fileName, true))
@@ -46,6 +57,13 @@ namespace TMG.Ilute.Model.Utilities
             }
         }
 
+        /// <summary>
+        /// Load the data from each given text file and load in all of the data as a
+        /// separate data point in the array.
+        /// </summary>
+        /// <param name="fileName">The name of the file to load in</param>
+        /// <param name="header">Does the file contain a header?</param>
+        /// <returns>Each column converted into an float</returns>
         internal static float[] LoadAllDataToFloat(string fileName, bool header)
         {
             using (var reader = new CsvReader(fileName, true))
