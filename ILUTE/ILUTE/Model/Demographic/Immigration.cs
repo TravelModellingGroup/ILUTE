@@ -32,7 +32,7 @@ using XTMF;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public sealed class Immigration : IExecuteYearly
+    public sealed class Immigration : IExecuteYearly, IDisposable
     {
         [SubModelInformation(Required = true, Description = "The log to save the write to.")]
         public IDataSource<ExecutionLog> LogSource;
@@ -69,7 +69,7 @@ namespace TMG.Ilute.Model.Demographic
         {
             FirstYear = firstYear;
             // Seed the Random Number Generator
-            RandomGenerator = new RandomStream(Seed);
+            RandomStream.CreateRandomStream(ref RandomGenerator, Seed);
             NumberOfImmigrantsBySimulationYear = FileUtility.LoadAllDataToInt(ImmigrantsByYear, false);
             HouseholdTypeData = FileUtility.LoadAllDataToFloat(HouseholdDistributions, false);
         }
@@ -562,6 +562,26 @@ namespace TMG.Ilute.Model.Demographic
         public bool RuntimeValidation(ref string error)
         {
             return true;
+        }
+
+        private void Dispose(bool managed)
+        {
+            if (managed)
+            {
+                GC.SuppressFinalize(this);
+            }
+            RandomGenerator.Dispose();
+            RandomGenerator = null;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        ~Immigration()
+        {
+            Dispose(false);
         }
     }
 }

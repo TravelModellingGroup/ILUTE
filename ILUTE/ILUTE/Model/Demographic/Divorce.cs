@@ -34,7 +34,7 @@ using XTMF;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public class Divorce : IExecuteYearly
+    public sealed class Divorce : IExecuteYearly, IDisposable
     {
         [SubModelInformation(Required = true, Description = "The log to save the write to.")]
         public IDataSource<ExecutionLog> LogSource;
@@ -97,7 +97,7 @@ namespace TMG.Ilute.Model.Demographic
         public void BeforeFirstYear(int firstYear)
         {
             // Seed the Random Number Generator
-            RandomGenerator = new RandomStream(Seed, 1000);
+            RandomStream.CreateRandomStream(ref RandomGenerator, Seed);
             // load in the data we will use for rates
             DivorceData = FileUtility.LoadAllDataToFloat(DivorceRatesFile, false);
             // process the data so to remove all of the divides needed to replicate
@@ -230,6 +230,26 @@ namespace TMG.Ilute.Model.Demographic
         public bool RuntimeValidation(ref string error)
         {
             return true;
+        }
+
+        private void Dispose(bool managed)
+        {
+            if (managed)
+            {
+                GC.SuppressFinalize(this);
+            }
+            RandomGenerator.Dispose();
+            RandomGenerator = null;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        ~Divorce()
+        {
+            Dispose(false);
         }
     }
 }

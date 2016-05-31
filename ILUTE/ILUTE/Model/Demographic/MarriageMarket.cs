@@ -33,7 +33,7 @@ using TMG.Functions;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public class MarriageMarket : IExecuteYearly
+    public sealed class MarriageMarket : IExecuteYearly, IDisposable
     {
 
         [SubModelInformation(Required = true, Description = "The location of the information containing birth rates")]
@@ -79,7 +79,7 @@ namespace TMG.Ilute.Model.Demographic
             // this model executes in the second year since the population is known during synthesis
             FirstYear = firstYear + 1;
             // Seed the Random Number Generator
-            RandomGenerator = new RandomStream(Seed);
+            RandomStream.CreateRandomStream(ref RandomGenerator, Seed);
             // load in the data we will use for rates
             MarriageParticipationRateData = FileUtility.LoadAllDataToFloat(MarriageRatesFileLocation, false);
             VectorHelper.Multiply(MarriageParticipationRateData, MarriageParticipationRateData, ParticipationModification);
@@ -238,6 +238,26 @@ namespace TMG.Ilute.Model.Demographic
         public bool RuntimeValidation(ref string error)
         {
             return true;
+        }
+
+        private void Dispose(bool managed)
+        {
+            if (managed)
+            {
+                GC.SuppressFinalize(this);
+            }
+            RandomGenerator.Dispose();
+            RandomGenerator = null;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        ~MarriageMarket()
+        {
+            Dispose(false);
         }
     }
 }

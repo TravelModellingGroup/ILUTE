@@ -32,7 +32,7 @@ using System.Collections.Concurrent;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public class BirthModel : IExecuteYearly
+    public class BirthModel : IExecuteYearly, IDisposable
     {
 
         public string Name { get; set; }
@@ -77,7 +77,7 @@ namespace TMG.Ilute.Model.Demographic
             // this model executes in the second year since the population is known during synthesis
             FirstYear = firstYear + 1;
             // Seed the Random Number Generator
-            RandomGenerator = new RandomStream(Seed);
+            RandomStream.CreateRandomStream(ref RandomGenerator, Seed);
             // load in the data we will use for rates
             BirthRateData = FileUtility.LoadAllDataToFloat(BirthRatesFileLocation, false);
         }
@@ -238,6 +238,26 @@ namespace TMG.Ilute.Model.Demographic
         public bool RuntimeValidation(ref string error)
         {
             return true;
+        }
+
+        private void Dispose(bool managed)
+        {
+            if(managed)
+            {
+                GC.SuppressFinalize(this);
+            }
+            RandomGenerator.Dispose();
+            RandomGenerator = null;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        ~BirthModel()
+        {
+            Dispose(false);
         }
     }
 }

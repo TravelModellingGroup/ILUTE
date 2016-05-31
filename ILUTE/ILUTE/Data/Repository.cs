@@ -61,7 +61,7 @@ namespace TMG.Ilute.Data
     /// This class is designed to facilitate the creation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class Repository<T> : Repository, IDataSource<Repository<T>>, IEnumerable<T>
+    public sealed class Repository<T> : Repository, IDataSource<Repository<T>>, IEnumerable<T>, IDisposable
         where T : IndexedObject
     {
 
@@ -365,7 +365,7 @@ namespace TMG.Ilute.Data
                 {
                     if (IsDisposed)
                     {
-                        throw new InvalidOperationException("Can not dispose an enumeration more than once!");
+                        return;
                     }
                     LocalEnumerator.Dispose();
                     IsDisposed = true;
@@ -428,7 +428,7 @@ namespace TMG.Ilute.Data
                 {
                     if (IsDisposed)
                     {
-                        throw new InvalidOperationException("Can not dispose a disposed context!");
+                        return;
                     }
                     IsDisposed = true;
                 }
@@ -462,6 +462,26 @@ namespace TMG.Ilute.Data
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        private void Dispose(bool managed)
+        {
+            if(managed)
+            {
+                GC.SuppressFinalize(this);
+            }
+            DataLock.Dispose();
+            DataLock = null;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        ~Repository()
+        {
+            Dispose(false);
         }
     }
 }

@@ -39,7 +39,16 @@ namespace TMG.Ilute.Model
         private IEnumerator<float> NextNumberEnumeration;
         private volatile bool Done = false;
 
-        public RandomStream(uint seed, int capacity = 1000)
+        public static void CreateRandomStream(ref RandomStream stream, uint seed, int capacity = 1000)
+        {
+            if(stream != null)
+            {
+                stream.Dispose();
+            }
+            stream = new RandomStream(seed, capacity);
+        }
+
+        private RandomStream(uint seed, int capacity)
         {
             if (capacity <= 1)
             {
