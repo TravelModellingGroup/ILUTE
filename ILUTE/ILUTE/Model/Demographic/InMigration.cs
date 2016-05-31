@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMG.Ilute.Data.Spatial;
 using TMG.Ilute.Model.Utilities;
 using TMG.Input;
 using XTMF;
@@ -31,18 +32,13 @@ namespace TMG.Ilute.Model.Demographic
 
     public class InMigration : IExecuteYearly
     {
-        [SubModelInformation(Required = true, Description = "The location of the information containing birth rates")]
-        public FileLocation InMigrationRatesFileLocation;
-
         [SubModelInformation(Required = true, Description = "The log to save the write to.")]
         public IDataSource<ExecutionLog> LogSource;
 
         [RunParameter("Random Seed", 12345u, "The seed to use for the random number generator.")]
         public uint Seed;
 
-        private float[] InMigrationRateData;
-
-        Rand RandomGenerator;
+        RandomStream RandomGenerator;
 
         public string Name { get; set; }
 
@@ -50,37 +46,51 @@ namespace TMG.Ilute.Model.Demographic
 
         public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
 
+        private int FirstYear;
+
+
+
         public void AfterYearlyExecute(int year)
         {
         }
 
         public void BeforeFirstYear(int firstYear)
         {
+            FirstYear = firstYear;
             // Seed the Random Number Generator
-            RandomGenerator = new Rand(Seed);
-            InMigrationRateData = LoadInData(InMigrationRatesFileLocation);
+            RandomGenerator = new RandomStream(Seed);
+
+            foreach (var area in SimulationAreas)
+            {
+                area.BeforeFirstYear();
+            }
         }
 
-        private float[] LoadInData(string fileName)
+        [SubModelInformation(Required = false, Description = "Separate areas for immigration")]
+        public Area[] SimulationAreas;
+
+        public class Area : XTMF.IModule
         {
-            float[] storeData;
-            using (var reader = new CsvReader(fileName, true))
+            [SubModelInformation(Required = true, Description = "The location of the information containing birth rates")]
+            public FileLocation InMigrationRatesFileLocation;
+
+            private int[] NumberOfImmigratsBySimulationYear;
+
+            public string Name { get; set; }
+
+            public float Progress { get; set; }
+
+            public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
+
+            public bool RuntimeValidation(ref string error)
             {
-                int columns;
-                List<float> data = new List<float>();
-                while (reader.LoadLine(out columns))
-                {
-                    for (int i = 0; i < columns; i++)
-                    {
-                        float temp;
-                        reader.Get(out temp, i);
-                        data.Add(temp);
-                    }
-                }
-                storeData = data.ToArray();
+                return true;
             }
 
-            return storeData;
+            public void BeforeFirstYear()
+            {
+                NumberOfImmigratsBySimulationYear = FileUtility.LoadAllDataToInt(InMigrationRatesFileLocation, false);
+            }
         }
 
         public void BeforeYearlyExecute(int year)
@@ -89,12 +99,10 @@ namespace TMG.Ilute.Model.Demographic
 
         public void Execute(int year)
         {
-
-        }
-
-        public int GetIndex(int deltaYear)
-        {
-            return -1;
+            if (year > FirstYear)
+            {
+                var deltaYear = year - FirstYear;
+            }
         }
 
         public void RunFinished(int finalYear)

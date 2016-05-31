@@ -79,21 +79,7 @@ namespace TMG.Ilute.Model.Demographic
             // Seed the Random Number Generator
             RandomGenerator = new RandomStream(Seed);
             // load in the data we will use for rates
-            using (var reader = new CsvReader(BirthRatesFileLocation, true))
-            {
-                int columns;
-                List<float> data = new List<float>();
-                while(reader.LoadLine(out columns))
-                {
-                    for (int i = 0; i < columns; i++)
-                    {
-                        float temp;
-                        reader.Get(out temp, i);
-                        data.Add(temp);
-                    }
-                }
-                BirthRateData = data.ToArray();
-            }
+            BirthRateData = FileUtility.LoadAllDataToFloat(BirthRatesFileLocation, false);
         }
 
         public void BeforeYearlyExecute(int year)
