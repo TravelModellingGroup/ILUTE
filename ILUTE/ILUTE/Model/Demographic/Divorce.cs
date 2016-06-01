@@ -131,7 +131,7 @@ namespace TMG.Ilute.Model.Demographic
                    // if the family is married
                    if (female != null && male != null && female.Spouse == male)
                    {
-                       var pick = rand.NextFloat();
+                       var pick = rand.Take();
                        if (CheckIfShouldDivorse(pick, family, year))
                        {
                            toDivoce.Add(family);

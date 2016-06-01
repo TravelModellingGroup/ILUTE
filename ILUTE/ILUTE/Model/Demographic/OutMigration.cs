@@ -114,7 +114,7 @@ namespace TMG.Ilute.Model.Demographic
            {
                foreach (var person in persons)
                {
-                   if (rand.NextFloat() < rateForYear)
+                   if (rand.Take() < rateForYear)
                    {
                        toOutMigrate.Add(person);
                    }

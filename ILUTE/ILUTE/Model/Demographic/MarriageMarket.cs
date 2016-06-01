@@ -121,7 +121,7 @@ namespace TMG.Ilute.Model.Demographic
            {
                for (int i = 0; i < persons.Count; i++)
                {
-                   int randomIndex = (int)(rand.NextFloat() * (persons.Count - i)) + i;
+                   int randomIndex = (int)(rand.Take() * (persons.Count - i)) + i;
                    var temp = persons[randomIndex];
                    persons[randomIndex] = persons[i];
                    persons[i] = temp;
@@ -215,7 +215,7 @@ namespace TMG.Ilute.Model.Demographic
                            if (index >= 0)
                            {
                                // see if they chose to enter the market
-                               var pop = rand.NextFloat();
+                               var pop = rand.Take();
                                if (pop < MarriageParticipationRateData[index])
                                {
                                    (person.Sex == Sex.Male ? localMales : localFemales).Add(person);

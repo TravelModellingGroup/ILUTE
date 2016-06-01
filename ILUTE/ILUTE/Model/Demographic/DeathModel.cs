@@ -108,7 +108,7 @@ namespace TMG.Ilute.Model.Demographic
                     else
                     {
                         var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
-                        if (rand.NextFloat() < DeathRateData[index])
+                        if (rand.Take() < DeathRateData[index])
                         {
                             person.Living = false;
                             numberOfDeaths++;

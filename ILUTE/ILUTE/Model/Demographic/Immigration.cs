@@ -217,14 +217,14 @@ namespace TMG.Ilute.Model.Demographic
                                 Person male = null, female = null;
                                 if (createMale)
                                 {
-                                    male = CreatePerson(0, AgeFromAdultAgeCategory(rand.NextFloat(), ageM), 2, (createMale && createFemale ? 2 : 4));
+                                    male = CreatePerson(0, AgeFromAdultAgeCategory(rand.Take(), ageM), 2, (createMale && createFemale ? 2 : 4));
                                     family.Persons.Add(male);
                                     male.Family = family;
                                     family.MaleHead = male;
                                 }
                                 if (createFemale)
                                 {
-                                    female = CreatePerson(0, AgeFromAdultAgeCategory(rand.NextFloat(), ageF), 1, (createMale && createFemale ? 2 : 4));
+                                    female = CreatePerson(0, AgeFromAdultAgeCategory(rand.Take(), ageF), 1, (createMale && createFemale ? 2 : 4));
                                     family.Persons.Add(female);
                                     female.Family = family;
                                     family.FemaleHead = female;
@@ -241,27 +241,27 @@ namespace TMG.Ilute.Model.Demographic
                                     for (int i = 0; i < childrenA; i++)
                                     {
                                         children.Add(
-                                            CreatePerson(0, (int)(0.0f + rand.NextFloat() * 6.0f), rand.NextFloat() < 0.5f ? 2 : 1, 4));
+                                            CreatePerson(0, (int)(0.0f + rand.Take() * 6.0f), rand.Take() < 0.5f ? 2 : 1, 4));
                                     }
                                     for (int i = 0; i < childrenB; i++)
                                     {
                                         children.Add(
-                                            CreatePerson(0, (int)(6.0f + rand.NextFloat() * 9.0f), rand.NextFloat() < 0.5f ? 2 : 1, 4));
+                                            CreatePerson(0, (int)(6.0f + rand.Take() * 9.0f), rand.Take() < 0.5f ? 2 : 1, 4));
                                     }
                                     for (int i = 0; i < childrenC; i++)
                                     {
                                         children.Add(
-                                            CreatePerson(0, (int)(15.0f + rand.NextFloat() * 3.0f), rand.NextFloat() < 0.5f ? 2 : 1, 4));
+                                            CreatePerson(0, (int)(15.0f + rand.Take() * 3.0f), rand.Take() < 0.5f ? 2 : 1, 4));
                                     }
                                     for (int i = 0; i < childrenD; i++)
                                     {
                                         children.Add(
-                                            CreatePerson(0, (int)(18.0f + rand.NextFloat() * 7.0f), rand.NextFloat() < 0.5f ? 2 : 1, 4));
+                                            CreatePerson(0, (int)(18.0f + rand.Take() * 7.0f), rand.Take() < 0.5f ? 2 : 1, 4));
 
                                     }
                                     for (int i = 0; i < childrenE; i++)
                                     {
-                                        children.Add(CreatePerson(0, 25, rand.NextFloat() < 0.5f ? 2 : 1, 4));
+                                        children.Add(CreatePerson(0, 25, rand.Take() < 0.5f ? 2 : 1, 4));
                                     }
                                     male?.Children.AddRange(children);
                                     female?.Children.AddRange(children);
@@ -340,7 +340,7 @@ namespace TMG.Ilute.Model.Demographic
                                // get sex
                                reader.Get(out sex, 6);
                                reader.Get(out maritalStatus, 7);
-                               var person = CreatePerson(rand.NextFloat(), age, sex, maritalStatus);
+                               var person = CreatePerson(rand.Take(), age, sex, maritalStatus);
                                if (person.MaritalStatus == MaritalStatus.Married)
                                {
                                    person.MaritalStatus = MaritalStatus.Single;
@@ -419,7 +419,7 @@ namespace TMG.Ilute.Model.Demographic
                 {
                     while (targetPersons > 0)
                     {
-                        float chance = rand.NextFloat();
+                        float chance = rand.Take();
                         float acc = 0.0f;
                         int householdType = 0;
                         for (; acc < chance; householdType++)
@@ -433,40 +433,40 @@ namespace TMG.Ilute.Model.Demographic
                             case 1:
                                 {
                                     household.HouseholdType = HouseholdComposition.SingleIndividuals;
-                                    household.Families.Add(GetFamilyFromPool(individualPool, rand.NextFloat()));
+                                    household.Families.Add(GetFamilyFromPool(individualPool, rand.Take()));
                                 }
                                 break;
                             case 2:
                                 {
                                     household.HouseholdType = HouseholdComposition.MultiIndividuals;
                                     // create at least 2 individuals
-                                    household.Families.Add(GetFamilyFromPool(individualPool, rand.NextFloat()));
+                                    household.Families.Add(GetFamilyFromPool(individualPool, rand.Take()));
                                     do
                                     {
-                                        household.Families.Add(GetFamilyFromPool(individualPool, rand.NextFloat()));
-                                    } while (rand.NextFloat() < ProbabilityOfAdditionalMultiIndividuals);
+                                        household.Families.Add(GetFamilyFromPool(individualPool, rand.Take()));
+                                    } while (rand.Take() < ProbabilityOfAdditionalMultiIndividuals);
                                 }
                                 break;
                             case 3:
                                 {
                                     household.HouseholdType = HouseholdComposition.SingleFamily;
-                                    household.Families.Add(GetFamilyFromPool(familyPool, rand.NextFloat()));
+                                    household.Families.Add(GetFamilyFromPool(familyPool, rand.Take()));
                                 }
                                 break;
                             case 4:
                                 {
                                     household.HouseholdType = HouseholdComposition.SingleFamilyIndividuals;
-                                    household.Families.Add(GetFamilyFromPool(familyPool, rand.NextFloat()));
+                                    household.Families.Add(GetFamilyFromPool(familyPool, rand.Take()));
                                     //TODO: Assumption is that there is only 1 additional individual
-                                    household.Families.Add(GetFamilyFromPool(individualPool, rand.NextFloat()));
+                                    household.Families.Add(GetFamilyFromPool(individualPool, rand.Take()));
                                 }
                                 break;
                             case 5:
                                 {
                                     household.HouseholdType = HouseholdComposition.MultiFamily;
                                     //TODO: Assumption is that there are two families for this type
-                                    household.Families.Add(GetFamilyFromPool(familyPool, rand.NextFloat()));
-                                    household.Families.Add(GetFamilyFromPool(familyPool, rand.NextFloat()));
+                                    household.Families.Add(GetFamilyFromPool(familyPool, rand.Take()));
+                                    household.Families.Add(GetFamilyFromPool(familyPool, rand.Take()));
                                 }
                                 break;
 

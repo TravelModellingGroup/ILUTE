@@ -108,7 +108,7 @@ namespace TMG.Ilute.Model.Demographic
                {
                    if (person.Sex == Sex.Female && person.Age >= AgeOfMaturity && person.Living)
                    {
-                       var pick = rand.NextFloat();
+                       var pick = rand.Take();
                        var index = GetDataIndex(person.Age, person.MaritalStatus, deltaYear);
                        if (pick < BirthRateData[index])
                        {
@@ -126,7 +126,7 @@ namespace TMG.Ilute.Model.Demographic
                {
                     // create the child
                     var baby = new Person();
-                   baby.Sex = rand.NextFloat() < ProbabilityOfBabyBeingFemale ? Sex.Female : Sex.Male;
+                   baby.Sex = rand.Take() < ProbabilityOfBabyBeingFemale ? Sex.Female : Sex.Male;
                    baby.Mother = mother;
                    baby.Father = mother.Spouse;
                    persons.AddNew(baby);

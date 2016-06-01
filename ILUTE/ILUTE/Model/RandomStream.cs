@@ -25,6 +25,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace TMG.Ilute.Model
 {
@@ -36,8 +37,6 @@ namespace TMG.Ilute.Model
     {
         private Rand BackendRandom;
         private uint BaseSeed;
-        private IEnumerator<float> NextNumberEnumeration;
-        private volatile bool Done = false;
 
         public static void CreateRandomStream(ref RandomStream stream, uint seed, int capacity = 1000)
         {
@@ -56,30 +55,6 @@ namespace TMG.Ilute.Model
             }
             BackendRandom = new Rand(seed);
             BaseSeed = seed;
-            var nextNumbers = new BlockingCollection<float>(capacity);
-            NextNumberEnumeration = nextNumbers.GetConsumingEnumerable().GetEnumerator();
-            new Thread(
-                () =>
-                {
-                    try
-                    {
-                        while (!Done)
-                        {
-                            var next = BackendRandom.NextFloat();
-                            while (!nextNumbers.TryAdd(next, 500))
-                            {
-                                Thread.MemoryBarrier();
-                                if (Done) return;
-                                break;
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        nextNumbers.CompleteAdding();
-                    }
-                })
-            { IsBackground = true }.Start();
         }
 
         ~RandomStream()
@@ -88,14 +63,19 @@ namespace TMG.Ilute.Model
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ExecuteWithProvider(Action<IEnumerator<float>> executeWithStream)
+        public void ExecuteWithProvider(Action<RandomStream> executeWithStream)
         {
-            executeWithStream(NextNumberEnumeration);
+            executeWithStream(this);
+        }
+
+        public float Take()
+        {
+            return BackendRandom.NextFloat();
         }
 
         public void Dispose()
         {
-            Done = true;
+
         }
     }
 
