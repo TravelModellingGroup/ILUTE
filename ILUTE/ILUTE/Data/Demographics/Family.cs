@@ -46,7 +46,7 @@ namespace TMG.Ilute.Data.Demographics
 
         public override void BeingRemoved()
         {
-            Household.RemoveFamily(this);
+            Household?.RemoveFamily(this);
         }
 
         public void RemovePerson(Person personToRemove)

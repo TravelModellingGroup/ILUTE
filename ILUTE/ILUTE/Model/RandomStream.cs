@@ -66,10 +66,10 @@ namespace TMG.Ilute.Model
                         while (!Done)
                         {
                             var next = BackendRandom.NextFloat();
-                            while (nextNumbers.TryAdd(next, 500))
+                            while (!nextNumbers.TryAdd(next, 500))
                             {
                                 Thread.MemoryBarrier();
-                                if (!Done) return;
+                                if (Done) return;
                                 break;
                             }
                         }

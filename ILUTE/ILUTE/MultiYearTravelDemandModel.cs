@@ -95,36 +95,52 @@ namespace TMG.Ilute
             ZoneSystem.LoadData();
             for (int i = 0; i < PreRun.Length; i++)
             {
+                _Status = () => PreRun[i].ToString();
                 PreRun[i].Start();
             }
             foreach (var model in RunYearly)
             {
+                _Status = () => model.ToString();
                 model.BeforeFirstYear(StartYear);
             }
             for (int year = 0; year < NumberOfYears && !_Exit; year++)
             {
                 for (int i = 0; i < RunYearly.Length && !_Exit; i++)
                 {
+                    _Status = () => RunYearly[i].ToString();
                     RunYearly[i].BeforeYearlyExecute(StartYear + year);
                 }
                 for (int i = 0; i < RunYearly.Length && !_Exit; i++)
                 {
+                    _Status = () => RunYearly[i].ToString();
                     RunYearly[i].Execute(StartYear + year);
                 }
                 for (int i = 0; i < RunYearly.Length && !_Exit; i++)
                 {
+                    _Status = () => RunYearly[i].ToString();
                     RunYearly[i].AfterYearlyExecute(StartYear + year);
                 }
             }
             foreach (var model in RunYearly)
             {
+                _Status = () => model.ToString();
                 model.RunFinished(StartYear + NumberOfYears - 1);
             }
             for (int i = 0; i < PostRun.Length; i++)
             {
+                _Status = () => PostRun[i].ToString();
                 PostRun[i].Start();
             }
             ZoneSystem.UnloadData();
+        }
+
+        private Func<string> _Status;
+
+        public override string ToString()
+        {
+            var s = _Status;
+            if (s != null) return s();
+            return base.ToString();
         }
     }
 }

@@ -161,7 +161,7 @@ namespace TMG.Ilute.Model.Demographic
                 f.Persons.Add(female);
                 f.Persons.Add(male);
                 f.Household = male.Family.Household;
-                f.Household.Families.Add(f);
+                f.Household?.Families.Add(f);
 
                 male.Family.RemovePerson(male);
                 female.Family.RemovePerson(female);

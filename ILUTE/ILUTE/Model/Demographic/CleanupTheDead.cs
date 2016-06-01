@@ -60,14 +60,14 @@ namespace TMG.Ilute.Model.Demographic
 
         public void Execute(int year)
         {
-            List<Person> personsToKill = GetPersonsToKill(Persons.GiveData());
+            var personsToKill = GetPersonsToKill(Persons.GiveData());
             RemoveFromRepository(personsToKill, Persons.GiveData());
             RemoveFromRepository(GetFamiliesToRemove(personsToKill), Families.GiveData());
         }
 
-        private List<Person> GetPersonsToKill(Repository<Person> persons)
+        private HashSet<Person> GetPersonsToKill(Repository<Person> persons)
         {
-            var toKill = new List<Person>();
+            var toKill = new HashSet<Person>();
             foreach (var person in persons)
             {
                 if (!person.Living)
@@ -78,9 +78,9 @@ namespace TMG.Ilute.Model.Demographic
             return toKill;
         }
 
-        private List<Family> GetFamiliesToRemove(List<Person> personsToKill)
+        private HashSet<Family> GetFamiliesToRemove(HashSet<Person> personsToKill)
         {
-            var ret = new List<Family>();
+            var ret = new HashSet<Family>();
             using (var families = Families.GiveData().GetMultiAccessContext())
             {
                 // remove each person from their families
@@ -98,7 +98,7 @@ namespace TMG.Ilute.Model.Demographic
                     }
                     if (!anyAlive)
                     {
-                        if (ret.Contains(family))
+                        if (!ret.Contains(family))
                         {
                             ret.Add(family);
                         }
@@ -108,7 +108,7 @@ namespace TMG.Ilute.Model.Demographic
             return ret;
         }
 
-        private static void RemoveFromRepository<T>(List<T> toRemove, Repository<T> toRemoveFrom)
+        private static void RemoveFromRepository<T>(HashSet<T> toRemove, Repository<T> toRemoveFrom)
             where T : IndexedObject
         {
             // check for duplicates

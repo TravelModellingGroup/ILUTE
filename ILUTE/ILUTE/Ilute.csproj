@@ -83,6 +83,7 @@
     <Compile Include="Interfaces\IExecuteYearly.cs" />
     <Compile Include="Model\Demographic\Divorce.cs" />
     <Compile Include="Model\Demographic\Immigration.cs" />
+    <Compile Include="Model\Demographic\OutMigration.cs" />
     <Compile Include="Model\Demographic\UpdateDemographicsToNextYear.cs" />
     <Compile Include="Model\Demographic\BirthModel.cs" />
     <Compile Include="Model\Demographic\CleanupTheDead.cs" />

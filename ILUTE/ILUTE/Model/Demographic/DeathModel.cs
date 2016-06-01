@@ -91,34 +91,32 @@ namespace TMG.Ilute.Model.Demographic
             }
             int deltaYear = year - FirstYear;
             var log = Repository.GetRepository(LogSource);
-            log.WriteToLog($"Finding people who will be dying for Year {year}");
-            var persons = Repository.GetRepository(PersonRepository);
             int toOutputNumberOfDeaths = 0;
-
+            log.WriteToLog($"Finding people who will be dying for Year {year}");
             RandomGenerator.ExecuteWithProvider((rand) =>
-           {
-               int numberOfDeaths = 0;
+            {
+                var persons = Repository.GetRepository(PersonRepository);
+                int numberOfDeaths = 0;
                 // first find all persons who will be having a child
                 foreach (var person in persons)
-               {
-                   if (person.Age > MaximumAge)
-                   {
-                       person.Living = false;
-                       toOutputNumberOfDeaths++;
-                   }
-                   else
-                   {
-                       var pick = rand.NextFloat();
-                       var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
-                       if (pick < DeathRateData[index])
-                       {
-                           person.Living = false;
-                           toOutputNumberOfDeaths++;
-                       }
-                   }
-               }
-               toOutputNumberOfDeaths = numberOfDeaths;
-           });
+                {
+                    if (person.Age > MaximumAge)
+                    {
+                        person.Living = false;
+                        numberOfDeaths++;
+                    }
+                    else
+                    {
+                        var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
+                        if (rand.NextFloat() < DeathRateData[index])
+                        {
+                            person.Living = false;
+                            numberOfDeaths++;
+                        }
+                    }
+                }
+                toOutputNumberOfDeaths = numberOfDeaths;
+            });
             Thread.MemoryBarrier();
             log.WriteToLog($"Number of deaths in {year}: {toOutputNumberOfDeaths}");
         }

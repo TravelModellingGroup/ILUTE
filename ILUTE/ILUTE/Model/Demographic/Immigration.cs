@@ -19,6 +19,7 @@
 using Datastructure;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -413,6 +414,7 @@ namespace TMG.Ilute.Model.Demographic
                 var familyPool = BuildFamilyPool(deltaYear);
                 var individualPool = BuildIndividualPool(deltaYear);
                 var targetPersons = (int)(Parent.NumberOfImmigrantsBySimulationYear[deltaYear + (RegionNumber - 1) * 20] * Scale);
+                Repository.GetRepository(Parent.LogSource).WriteToLog($"Number of persons to add in {Name} in {deltaYear} target additions are {targetPersons}.");
                 Parent.RandomGenerator.ExecuteWithProvider((rand) =>
                 {
                     while (targetPersons > 0)
@@ -544,6 +546,7 @@ namespace TMG.Ilute.Model.Demographic
         {
             if (year > FirstYear)
             {
+                Repository.GetRepository(LogSource).WriteToLog($"Persons before immigration in year {year} {Repository.GetRepository(RepositoryPerson).Count}.");
                 var deltaYear = year - FirstYear;
                 foreach (var area in SimulationAreas)
                 {
@@ -552,6 +555,7 @@ namespace TMG.Ilute.Model.Demographic
                         Repository.GetRepository(RepositoryFamily),
                         Repository.GetRepository(RepositoryPerson));
                 }
+                Repository.GetRepository(LogSource).WriteToLog($"Persons after immigration in year {year} {Repository.GetRepository(RepositoryPerson).Count}.");
             }
         }
 
