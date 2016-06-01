@@ -84,22 +84,12 @@ namespace TMG.Ilute.Model
                         {
                             y = (pmt[kk] & UPPER_MASK) | (pmt[kk + 1] & LOWER_MASK);
                             y = pmt[kk + M] ^ (y >> 1) ^ pmag[y & 0x1U];
-                            // Tempering
-                            y ^= (y >> 11);
-                            y ^= (y << 7) & 0x9d2c5680U;
-                            y ^= (y << 15) & 0xefc60000U;
-                            y ^= (y >> 18);
                             pmt[kk] = y;
                         }
                         for (; kk < N - 1; kk++)
                         {
                             y = (pmt[kk] & UPPER_MASK) | (pmt[kk + 1] & LOWER_MASK);
                             y = pmt[kk + (M - N)] ^ (y >> 1) ^ pmag[y & 0x1U];
-                            // Tempering
-                            y ^= (y >> 11);
-                            y ^= (y << 7) & 0x9d2c5680U;
-                            y ^= (y << 15) & 0xefc60000U;
-                            y ^= (y >> 18);
                             pmt[kk] = y;
                         }
                         y = (pmt[N - 1] & UPPER_MASK) | (pmt[0] & LOWER_MASK);
@@ -108,7 +98,13 @@ namespace TMG.Ilute.Model
                     }
                 }
             }
-            return mt[mti++];
+            var y2 = mt[mti++];
+            // Tempering
+            y2 ^= (y2 >> 11);
+            y2 ^= (y2 << 7) & 0x9d2c5680U;
+            y2 ^= (y2 << 15) & 0xefc60000U;
+            y2 ^= (y2 >> 18);
+            return y2;
         }
     }
 }
