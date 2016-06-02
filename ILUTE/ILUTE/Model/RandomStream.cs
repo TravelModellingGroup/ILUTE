@@ -63,9 +63,9 @@ namespace TMG.Ilute.Model
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ExecuteWithProvider(Action<RandomStream> executeWithStream)
+        public void ExecuteWithProvider(Action<Rand> executeWithStream)
         {
-            executeWithStream(this);
+            executeWithStream(BackendRandom);
         }
 
         public float Take()

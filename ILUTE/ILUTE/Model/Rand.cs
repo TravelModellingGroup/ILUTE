@@ -19,12 +19,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace TMG.Ilute.Model
 {
-    public class Rand
+    public sealed class Rand
     {
         // Period parameters.
         private const int N = 624;
@@ -60,7 +61,36 @@ namespace TMG.Ilute.Model
 
         public float NextFloat()
         {
-            return Next() * InvMaxUIntAsFloat;
+            if (mti >= N)
+            {
+                /* generate N words at one time */
+                unsafe
+                {
+                    fixed (uint* pmt = mt)
+                    {
+                        RandUpdateRandomVector(pmt);
+                        mti = 0;
+                    }
+                }
+            }
+            return mt[mti++] * InvMaxUIntAsFloat;
+        }
+
+        public float Take()
+        {
+            if (mti >= N)
+            {
+                /* generate N words at one time */
+                unsafe
+                {
+                    fixed (uint* pmt = mt)
+                    {
+                        RandUpdateRandomVector(pmt);
+                        mti = 0;
+                    }
+                }
+            }
+            return mt[mti++] * InvMaxUIntAsFloat;
         }
 
         public double NextDouble()
@@ -68,43 +98,24 @@ namespace TMG.Ilute.Model
             return Next() * InvMaxUIntAsDouble;
         }
 
+        [DllImport("IluteHPC.dll", CharSet = CharSet.Unicode)]
+        public static unsafe extern int RandUpdateRandomVector(uint* mt);
+
         private uint Next()
         {
             if (mti >= N)
             {
                 /* generate N words at one time */
-                int kk;
-                uint y;
                 unsafe
                 {
                     fixed (uint* pmt = mt)
-                    fixed (uint* pmag = mag01)
                     {
-                        for (kk = 0; kk < N - M; kk++)
-                        {
-                            y = (pmt[kk] & UPPER_MASK) | (pmt[kk + 1] & LOWER_MASK);
-                            y = pmt[kk + M] ^ (y >> 1) ^ pmag[y & 0x1U];
-                            pmt[kk] = y;
-                        }
-                        for (; kk < N - 1; kk++)
-                        {
-                            y = (pmt[kk] & UPPER_MASK) | (pmt[kk + 1] & LOWER_MASK);
-                            y = pmt[kk + (M - N)] ^ (y >> 1) ^ pmag[y & 0x1U];
-                            pmt[kk] = y;
-                        }
-                        y = (pmt[N - 1] & UPPER_MASK) | (pmt[0] & LOWER_MASK);
-                        pmt[N - 1] = pmt[M - 1] ^ (y >> 1) ^ pmag[y & 0x1U];
+                        RandUpdateRandomVector(pmt);
                         mti = 0;
                     }
                 }
             }
-            var y2 = mt[mti++];
-            // Tempering
-            y2 ^= (y2 >> 11);
-            y2 ^= (y2 << 7) & 0x9d2c5680U;
-            y2 ^= (y2 << 15) & 0xefc60000U;
-            y2 ^= (y2 >> 18);
-            return y2;
+            return mt[mti++];
         }
     }
 }

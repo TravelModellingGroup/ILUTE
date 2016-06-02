@@ -85,6 +85,7 @@ namespace TMG.Ilute.Data.Demographics
             var household = Family.Household;
             var personsInFamily = Family.Persons;
             Family.RemovePerson(this);
+            Family = null;
             Father?.RemoveChild(this);
             Mother?.RemoveChild(this);
             Spouse?.RemoveSpouse(this);

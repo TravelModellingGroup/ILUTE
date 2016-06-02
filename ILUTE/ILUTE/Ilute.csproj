@@ -31,6 +31,7 @@
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Datastructure, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -90,6 +91,8 @@
     <Compile Include="Model\Demographic\DeathModel.cs" />
     <Compile Include="Model\Demographic\InitializePopulation.cs" />
     <Compile Include="Model\Demographic\MarriageMarket.cs" />
+    <Compile Include="Model\Demographic\Validation\CountInRepository.cs" />
+    <Compile Include="Model\Demographic\Validation\EnsurePeoplePointToRightFamily.cs" />
     <Compile Include="Model\Demographic\Validation\GatherBirthsByAge.cs" />
     <Compile Include="Model\Demographic\Validation\GatherMarriageStatusByYear.cs" />
     <Compile Include="Model\Demographic\Validation\GatherPopulationByAges.cs" />
@@ -119,6 +122,11 @@
   <ItemGroup>
     <None Include="Diagrams\Oviewview.cd" />
     <None Include="Diagrams\VehicleTransaction.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="IluteHPC.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

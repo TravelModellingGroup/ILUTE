@@ -60,58 +60,38 @@ namespace TMG.Ilute.Model.Demographic
 
         public void Execute(int year)
         {
-            var personsToKill = GetPersonsToKill(Persons.GiveData());
-            RemoveFromRepository(personsToKill, Persons.GiveData());
-            RemoveFromRepository(GetFamiliesToRemove(personsToKill), Families.GiveData());
+            var toKill = GetElementsToKill(Repository.GetRepository(Families));
+            RemoveFromRepository(toKill.Item2, Repository.GetRepository(Families));
+            RemoveFromRepository(toKill.Item1, Repository.GetRepository(Persons));
         }
 
-        private HashSet<Person> GetPersonsToKill(Repository<Person> persons)
+        private Tuple<HashSet<Person>, HashSet<Family>> GetElementsToKill(Repository<Family> families)
         {
-            var toKill = new HashSet<Person>();
-            foreach (var person in persons)
+            var personsToKill = new HashSet<Person>();
+            var familiesToKill = new HashSet<Family>();
+            foreach (var family in families)
             {
-                if (!person.Living)
+                var persons = family.Persons;
+                int numberDead = 0;
+                for (int i = 0; i < persons.Count; i++)
                 {
-                    toKill.Add(person);
-                }
-            }
-            return toKill;
-        }
-
-        private HashSet<Family> GetFamiliesToRemove(HashSet<Person> personsToKill)
-        {
-            var ret = new HashSet<Family>();
-            using (var families = Families.GiveData().GetMultiAccessContext())
-            {
-                // remove each person from their families
-                foreach (var person in personsToKill)
-                {
-                    bool anyAlive = false;
-                    var family = person.Family;
-
-                    foreach (var p in family.Persons)
+                    if (!persons[i].Living)
                     {
-                        if (p.Living)
-                        {
-                            anyAlive = true;
-                        }
-                    }
-                    if (!anyAlive)
-                    {
-                        if (!ret.Contains(family))
-                        {
-                            ret.Add(family);
-                        }
+                        personsToKill.Add(persons[i]);
+                        numberDead++;
                     }
                 }
+                if(numberDead >= persons.Count)
+                {
+                    familiesToKill.Add(family);
+                }
             }
-            return ret;
+            return new Tuple<HashSet<Person>, HashSet<Family>>(personsToKill, familiesToKill);
         }
 
         private static void RemoveFromRepository<T>(HashSet<T> toRemove, Repository<T> toRemoveFrom)
             where T : IndexedObject
         {
-            // check for duplicates
             foreach (var remove in toRemove)
             {
                 toRemoveFrom.Remove(remove.Id);

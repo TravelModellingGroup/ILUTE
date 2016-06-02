@@ -106,6 +106,7 @@ namespace TMG.Ilute.Data.Demographics
             female.MaritalStatus = MaritalStatus.Divorced;
             male.MaritalStatus = MaritalStatus.Divorced;
             // create the male's new family object
+            male.Family.RemovePerson(male);
             male.Family = new Family() { Household = Household, MaleHead = male, FemaleHead = null };
             male.Family.Persons.Add(male);
             // add the family to the repository

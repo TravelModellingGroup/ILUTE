@@ -126,16 +126,22 @@ namespace TMG.Ilute.Model.Demographic
         private HashSet<Family> GetFamiliesToRemove(HashSet<Person> personsToMigrate)
         {
             var ret = new HashSet<Family>();
-            using (var families = Families.GiveData().GetMultiAccessContext())
+            // remove each person from their families
+            foreach (var person in personsToMigrate)
             {
-                // remove each person from their families
-                foreach (var person in personsToMigrate)
+                var family = person.Family;
+                var persons = family.Persons;
+                var total = persons.Count;
+                for (int i = 0; i < persons.Count; i++)
                 {
-                    var family = person.Family;
-                    if (family.Persons.Count <= 1 && !ret.Contains(family))
+                    if(personsToMigrate.Contains(persons[i]))
                     {
-                        ret.Add(family);
+                        total--;
                     }
+                }
+                if (total <= 0)
+                {
+                    ret.Add(family);
                 }
             }
             return ret;
