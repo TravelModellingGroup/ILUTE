@@ -78,6 +78,11 @@ namespace TMG.Ilute.Model.Demographic.Validation
         {
         }
 
+        ~GatherPopulationByAges()
+        {
+            Dispose();
+        }
+
         public void Dispose()
         {
             if(Writer != null)
@@ -95,15 +100,15 @@ namespace TMG.Ilute.Model.Demographic.Validation
             // male/female -> ages 0 to (99+)
             categories[0] = new int[100];
             categories[1] = new int[100];
-            Parallel.ForEach(persons, (Person person) =>
+            foreach(var person in persons)
             {
                 if (person.Living == Living)
                 {
                     var vector = person.Sex == Sex.Male ? categories[0] : categories[1];
                     var age = Math.Max(Math.Min(person.Age, vector.Length - 1), 0);
-                    Interlocked.Increment(ref vector[age]);
+                    vector[age]++;
                 }
-            });
+            }
             //write the data
             for(int sex = 0; sex < 2; sex++)
             {

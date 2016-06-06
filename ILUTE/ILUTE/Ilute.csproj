@@ -102,6 +102,7 @@
     <Compile Include="Model\Utilities\DemographicDataLoader.cs" />
     <Compile Include="Model\Utilities\ExecutionLog.cs" />
     <Compile Include="Model\Utilities\FileUtility.cs" />
+    <Compile Include="Model\Utilities\MarketModel.cs" />
     <Compile Include="Model\Utilities\RemoteDataSource.cs" />
     <Compile Include="Model\Utilities\TemporalDataLoader.cs" />
     <Compile Include="MultiYearTravelDemandModel.cs" />
