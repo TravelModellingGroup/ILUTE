@@ -89,11 +89,11 @@ namespace TMG.Ilute.Model.Utilities
         protected void Execute(int year, int month, Rand random)
         {
             var buyers = GetActiveBuyers(year, month, random);
-            var buyerIndexes = BuildIndexes(buyers);
             var choiceSets = CreateChoiceSets(year, month, buyers, GetActiveSellers(year, month, random), random);
 
             for (int i = 0; i < ChoiceSetSize; i++)
             {
+                var buyerIndexes = BuildIndexes(buyers);
                 ResolveChoiceSets(choiceSets, buyerIndexes);
             }
         }
@@ -144,6 +144,15 @@ namespace TMG.Ilute.Model.Utilities
                         Offer = offer
                     };
                 }
+                // remove offers less than the minimum price
+                for (int i = 0; i < set.PotentialBuyers.Length; i++)
+                {
+                    if(set.PotentialBuyers[i].Offer < set.Seller.MinimumPrice)
+                    {
+                        set.PotentialBuyers[i].Offer = 0;
+                        set.PotentialBuyers[i].Buyer = default(Buyer);
+                    }
+                }
                 sets.Add(set);
             }
             return sets;
@@ -159,12 +168,16 @@ namespace TMG.Ilute.Model.Utilities
             // get the best option for each buyer
             for (int i = 0; i < choiceSets.Count; i++)
             {
+                if(choiceSets[i].PotentialBuyers.Length == 0)
+                {
+                    Console.WriteLine("got here");
+                }
                 var potential = choiceSets[i].PotentialBuyers[0];
-                if(potential.Buyer != null)
+                if (potential.Buyer != null)
                 {
                     var index = buyerToIndex[potential.Buyer];
                     var other = selectionIndex[index];
-                    if(other.BestIndex < 0 || other.BestPrice < potential.Offer)
+                    if (other.BestIndex < 0 || other.BestPrice < potential.Offer)
                     {
                         selectionIndex[index] = new BuyerOptions() { BestPrice = potential.Offer, BestIndex = i };
                     }
@@ -175,25 +188,24 @@ namespace TMG.Ilute.Model.Utilities
             // now that everything is selected, do the assignments and reduce the choice sets
             for (int i = 0; i < selectionIndex.Length; i++)
             {
-                if(selectionIndex[i].BestIndex >= 0)
+                if (selectionIndex[i].BestIndex >= 0)
                 {
                     var selectedSeller = choiceSets[selectionIndex[i].BestIndex];
                     var buyer = selectedSeller.PotentialBuyers[0].Buyer;
                     successfulBuyers.Add(buyer);
                     ResolveSelection(selectedSeller.Seller.Unit, buyer);
-                    indexOfSelectedChoiceSet.Add( selectionIndex[i].BestIndex );
+                    indexOfSelectedChoiceSet.Add(selectionIndex[i].BestIndex);
                     buyerToIndex.Remove(buyer);
                 }
             }
             // sort everything so we can remove them backwards so the indexes will not be invalidated
             indexOfSelectedChoiceSet.Sort();
-            indexOfSelectedChoiceSet.Reverse();
-            for (int i = 0; i < indexOfSelectedChoiceSet.Count; i++)
+            for (int i = indexOfSelectedChoiceSet.Count - 1; i >= 0 ; i--)
             {
                 choiceSets.RemoveAt(indexOfSelectedChoiceSet[i]);
             }
             // clear buyers from choice sets
-            for (int i = 0; i < choiceSets.Count; i++)
+            Parallel.For(0, choiceSets.Count, (int i) =>
             {
                 var buyers = choiceSets[i].PotentialBuyers;
                 for (int j = 0; j < buyers.Length && buyers[j].Buyer != null; j++)
@@ -201,10 +213,11 @@ namespace TMG.Ilute.Model.Utilities
                     if (successfulBuyers.Contains(buyers[j].Buyer))
                     {
                         Array.Copy(buyers, j + 1, buyers, j, buyers.Length - (j + 1));
+                        buyers[buyers.Length - 1].Buyer = default(Buyer);
                         j--;
                     }
                 }
-            }
+            });
         }
 
         public virtual bool RuntimeValidation(ref string error)

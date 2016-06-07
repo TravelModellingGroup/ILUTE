@@ -33,7 +33,7 @@ using TMG.Functions;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public sealed class MarriageMarket : IExecuteYearly, IDisposable
+    public sealed class MarriageMarket : MarketModel<Person, Person>, IExecuteYearly, IDisposable
     {
 
         [SubModelInformation(Required = true, Description = "The location of the information containing birth rates")]
@@ -53,6 +53,7 @@ namespace TMG.Ilute.Model.Demographic
 
         [SubModelInformation(Required = true, Description = "The repository containing simulated persons.")]
         public IDataSource<Repository<Family>> FamilyRepository;
+        private Repository<Family> _FamilyRepository;
 
         [RunParameter("Participation Modification", 1.0f, "Apply a modifier to the participation rates.")]
         public float ParticipationModification;
@@ -63,12 +64,6 @@ namespace TMG.Ilute.Model.Demographic
         public uint Seed;
 
         private const int MinimumAgeForMarriage = 16;
-
-        public string Name { get; set; }
-
-        public float Progress { get; set; }
-
-        public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
 
         public void AfterYearlyExecute(int year)
         {
@@ -83,51 +78,32 @@ namespace TMG.Ilute.Model.Demographic
             // load in the data we will use for rates
             MarriageParticipationRateData = FileUtility.LoadAllDataToFloat(MarriageRatesFileLocation, false);
             VectorHelper.Multiply(MarriageParticipationRateData, MarriageParticipationRateData, ParticipationModification);
+            _FamilyRepository = Repository.GetRepository(FamilyRepository);
         }
 
         public void BeforeYearlyExecute(int year)
         {
+            MarriagesInYear = 0;
         }
+
+        List<Person> Males, Females;
 
         public void Execute(int year)
         {
             var log = Repository.GetRepository(LogSource);
             log.WriteToLog($"Finding people who will be giving birth for Year {year}");
             // 1) Get people who want to enter the market
-            List<Person> males, females;
-            AddPeopleToMarket(year, out males, out females);
-            log.WriteToLog($"Marriage Market: Year {year}, Males Selected {males.Count}, Females Selected {females.Count}");
+            AddPeopleToMarket(year, out Males, out Females);
+            log.WriteToLog($"Marriage Market: Year {year}, Males Selected {Males.Count}, Females Selected {Females.Count}");
             // 2) Match people
             var currentDate = new Date(year, 0);
-            MatchPeopleRandomly(males, females, currentDate);
-        }
-
-        private void MatchPeopleRandomly(List<Person> males, List<Person> females, Date currentDate)
-        {
-            var families = Repository.GetRepository(FamilyRepository);
-            int couplesToProduce = Math.Min(males.Count, females.Count);
-            Shuffle(males);
-            Shuffle(females);
-            for (int i = 0; i < couplesToProduce; i++)
-            {
-                Marry(males[i], females[i], families);
-                females[i].Family.MarriageDate = currentDate;
-            }
-        }
-
-        private void Shuffle(List<Person> persons)
-        {
             RandomGenerator.ExecuteWithProvider((rand) =>
            {
-               for (int i = 0; i < persons.Count; i++)
-               {
-                   int randomIndex = (int)(rand.Take() * (persons.Count - i)) + i;
-                   var temp = persons[randomIndex];
-                   persons[randomIndex] = persons[i];
-                   persons[i] = temp;
-               }
+               Execute(year, 0, rand);
            });
+            log.WriteToLog($"Marriage Market: Year {year}, Couples married {MarriagesInYear}");
         }
+
 
         private void Marry(Person male, Person female, Repository<Family> families)
         {
@@ -146,7 +122,7 @@ namespace TMG.Ilute.Model.Demographic
                 female.Family.Persons.Add(male);
                 female.Family.MaleHead = male;
             }
-            else if(male.Family.MaleHead == male)
+            else if (male.Family.MaleHead == male)
             {
                 female.Family.RemovePerson(female);
                 female.Family = male.Family;
@@ -235,11 +211,6 @@ namespace TMG.Ilute.Model.Demographic
         {
         }
 
-        public bool RuntimeValidation(ref string error)
-        {
-            return true;
-        }
-
         private void Dispose(bool managed)
         {
             if (managed)
@@ -253,6 +224,34 @@ namespace TMG.Ilute.Model.Demographic
         public void Dispose()
         {
             Dispose(true);
+        }
+
+        protected override List<Person> GetActiveBuyers(int year, int month, Rand random)
+        {
+            return Males;
+        }
+
+        protected override List<SellerValues> GetActiveSellers(int year, int month, Rand random)
+        {
+            List<SellerValues> ret = new List<MarketModel<Person, Person>.SellerValues>(Females.Count);
+            for (int i = 0; i < Females.Count; i++)
+            {
+                ret.Add(new SellerValues() { Unit = Females[i], MinimumPrice = 0.0f, AskingPrice = 0.0f });
+            }
+            return ret;
+        }
+
+        protected override float GetOffer(SellerValues seller, Person nextBuyer, int year, int month)
+        {
+            return 0f;
+        }
+
+        int MarriagesInYear = 0;
+
+        protected override void ResolveSelection(Person seller, Person buyer)
+        {
+            Marry(seller, buyer, _FamilyRepository);
+            MarriagesInYear++;
         }
 
         ~MarriageMarket()
