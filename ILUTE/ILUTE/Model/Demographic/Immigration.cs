@@ -129,7 +129,7 @@ namespace TMG.Ilute.Model.Demographic
                 return new Person() { Age = age, Sex = sex == 2 ? Sex.Male : Sex.Female, MaritalStatus = GetMaritalStatusFromCensus(maritalStatus, rand) };
             }
 
-            private List<Family> BuildFamilyPool(int deltaYear)
+            private List<Family> BuildFamilyPool(int deltaYear, Rand rand)
             {
                 var pool = new List<Family>();
                 // Index of data loaded in ILUTE standardized variables
@@ -174,118 +174,115 @@ namespace TMG.Ilute.Model.Demographic
                 //	38	itenurc		Tenure
                 //	39	igrosrtc	Monthly Gross Rent
 
-                Parent.RandomGenerator.ExecuteWithProvider((rand) =>
+                using (var reader = new CsvReader(YearlyFamilyData[deltaYear], true))
                 {
-                    using (var reader = new CsvReader(YearlyFamilyData[deltaYear], true))
+                    int columns;
+                    List<Person> children = new List<Person>();
+                    while (reader.LoadLine(out columns))
                     {
-                        int columns;
-                        List<Person> children = new List<Person>();
-                        while (reader.LoadLine(out columns))
+                        if (columns >= 39)
                         {
-                            if (columns >= 39)
+                            var createMale = false;
+                            var createFemale = false;
+                            int familyStructure, ageM, ageF, childrenA, childrenB, childrenC, childrenD, childrenE;
+                            reader.Get(out familyStructure, 1);
+                            reader.Get(out ageM, 14);
+                            reader.Get(out ageF, 25);
+                            if (familyStructure > 0 && familyStructure < 5)
                             {
-                                var createMale = false;
-                                var createFemale = false;
-                                int familyStructure, ageM, ageF, childrenA, childrenB, childrenC, childrenD, childrenE;
-                                reader.Get(out familyStructure, 1);
-                                reader.Get(out ageM, 14);
-                                reader.Get(out ageF, 25);
-                                if (familyStructure > 0 && familyStructure < 5)
+                                createMale = createFemale = true;
+                            }
+                            else if (familyStructure == 5 && ageM != 99)
+                            {
+                                createMale = true;
+                            }
+                            else if (familyStructure == 6 && ageF != 99)
+                            {
+                                createFemale = true;
+                            }
+                            else
+                            {
+                                // this household record is invalid, just continue
+                                continue;
+                            }
+                            // get the number of children
+                            reader.Get(out childrenA, 4);
+                            reader.Get(out childrenB, 5);
+                            reader.Get(out childrenC, 6);
+                            reader.Get(out childrenD, 7);
+                            reader.Get(out childrenE, 8);
+                            var family = new Family();
+                            Person male = null, female = null;
+                            if (createMale)
+                            {
+                                male = CreatePerson(0, AgeFromAdultAgeCategory(rand.Take(), ageM), 2, (createMale && createFemale ? 2 : 4));
+                                family.Persons.Add(male);
+                                male.Family = family;
+                                family.MaleHead = male;
+                            }
+                            if (createFemale)
+                            {
+                                female = CreatePerson(0, AgeFromAdultAgeCategory(rand.Take(), ageF), 1, (createMale && createFemale ? 2 : 4));
+                                family.Persons.Add(female);
+                                female.Family = family;
+                                family.FemaleHead = female;
+                            }
+                            if (male != null && female != null)
+                            {
+                                male.Spouse = female;
+                                female.Spouse = male;
+                            }
+                            pool.Add(family);
+                            // Create children for each age range rand.NextFloat = [0,1)
+                            if (childrenA > 0 || childrenB > 0 || childrenC > 0 || childrenD > 0 || childrenE > 0)
+                            {
+                                for (int i = 0; i < childrenA; i++)
                                 {
-                                    createMale = createFemale = true;
+                                    children.Add(
+                                        CreatePerson(0, (int)(0.0f + rand.Take() * 6.0f), rand.Take() < 0.5f ? 2 : 1, 4));
                                 }
-                                else if (familyStructure == 5 && ageM != 99)
+                                for (int i = 0; i < childrenB; i++)
                                 {
-                                    createMale = true;
+                                    children.Add(
+                                        CreatePerson(0, (int)(6.0f + rand.Take() * 9.0f), rand.Take() < 0.5f ? 2 : 1, 4));
                                 }
-                                else if (familyStructure == 6 && ageF != 99)
+                                for (int i = 0; i < childrenC; i++)
                                 {
-                                    createFemale = true;
+                                    children.Add(
+                                        CreatePerson(0, (int)(15.0f + rand.Take() * 3.0f), rand.Take() < 0.5f ? 2 : 1, 4));
                                 }
-                                else
+                                for (int i = 0; i < childrenD; i++)
                                 {
-                                    // this household record is invalid, just continue
-                                    continue;
-                                }
-                                // get the number of children
-                                reader.Get(out childrenA, 4);
-                                reader.Get(out childrenB, 5);
-                                reader.Get(out childrenC, 6);
-                                reader.Get(out childrenD, 7);
-                                reader.Get(out childrenE, 8);
-                                var family = new Family();
-                                Person male = null, female = null;
-                                if (createMale)
-                                {
-                                    male = CreatePerson(0, AgeFromAdultAgeCategory(rand.Take(), ageM), 2, (createMale && createFemale ? 2 : 4));
-                                    family.Persons.Add(male);
-                                    male.Family = family;
-                                    family.MaleHead = male;
-                                }
-                                if (createFemale)
-                                {
-                                    female = CreatePerson(0, AgeFromAdultAgeCategory(rand.Take(), ageF), 1, (createMale && createFemale ? 2 : 4));
-                                    family.Persons.Add(female);
-                                    female.Family = family;
-                                    family.FemaleHead = female;
-                                }
-                                if (male != null && female != null)
-                                {
-                                    male.Spouse = female;
-                                    female.Spouse = male;
-                                }
-                                pool.Add(family);
-                                // Create children for each age range rand.NextFloat = [0,1)
-                                if (childrenA > 0 || childrenB > 0 || childrenC > 0 || childrenD > 0 || childrenE > 0)
-                                {
-                                    for (int i = 0; i < childrenA; i++)
-                                    {
-                                        children.Add(
-                                            CreatePerson(0, (int)(0.0f + rand.Take() * 6.0f), rand.Take() < 0.5f ? 2 : 1, 4));
-                                    }
-                                    for (int i = 0; i < childrenB; i++)
-                                    {
-                                        children.Add(
-                                            CreatePerson(0, (int)(6.0f + rand.Take() * 9.0f), rand.Take() < 0.5f ? 2 : 1, 4));
-                                    }
-                                    for (int i = 0; i < childrenC; i++)
-                                    {
-                                        children.Add(
-                                            CreatePerson(0, (int)(15.0f + rand.Take() * 3.0f), rand.Take() < 0.5f ? 2 : 1, 4));
-                                    }
-                                    for (int i = 0; i < childrenD; i++)
-                                    {
-                                        children.Add(
-                                            CreatePerson(0, (int)(18.0f + rand.Take() * 7.0f), rand.Take() < 0.5f ? 2 : 1, 4));
+                                    children.Add(
+                                        CreatePerson(0, (int)(18.0f + rand.Take() * 7.0f), rand.Take() < 0.5f ? 2 : 1, 4));
 
-                                    }
-                                    for (int i = 0; i < childrenE; i++)
-                                    {
-                                        children.Add(CreatePerson(0, 25, rand.Take() < 0.5f ? 2 : 1, 4));
-                                    }
-                                    male?.Children.AddRange(children);
-                                    female?.Children.AddRange(children);
-                                    foreach (var child in children)
-                                    {
-                                        child.Father = male;
-                                        child.Mother = female;
-                                        child.Family = family;
-                                        foreach (var otherChild in children)
-                                        {
-                                            if (child != otherChild)
-                                            {
-                                                child.Siblings.Add(otherChild);
-                                            }
-                                        }
-                                        family.Persons.Add(child);
-                                    }
-                                    // now that everything is copied over we can release the children
-                                    children.Clear();
                                 }
+                                for (int i = 0; i < childrenE; i++)
+                                {
+                                    children.Add(CreatePerson(0, 25, rand.Take() < 0.5f ? 2 : 1, 4));
+                                }
+                                male?.Children.AddRange(children);
+                                female?.Children.AddRange(children);
+                                foreach (var child in children)
+                                {
+                                    child.Father = male;
+                                    child.Mother = female;
+                                    child.Family = family;
+                                    foreach (var otherChild in children)
+                                    {
+                                        if (child != otherChild)
+                                        {
+                                            child.Siblings.Add(otherChild);
+                                        }
+                                    }
+                                    family.Persons.Add(child);
+                                }
+                                // now that everything is copied over we can release the children
+                                children.Clear();
                             }
                         }
                     }
-                });
+                }
                 return pool;
             }
 
@@ -294,7 +291,7 @@ namespace TMG.Ilute.Model.Demographic
                 return (int)(ageCateogry > 1 ? (random * 10.0f) + ageCateogry * 10 : (random * 15.0f));
             }
 
-            private List<Family> BuildIndividualPool(int deltaYear)
+            private List<Family> BuildIndividualPool(int deltaYear, Rand rand)
             {
                 var pool = new List<Family>();
                 // Index of data loaded in ILUTE standardized variables
@@ -320,38 +317,35 @@ namespace TMG.Ilute.Model.Demographic
                 //	19		Wages and Salaries
                 //	20		Tenure
                 //	21		Monthly Gross Rent
-                Parent.RandomGenerator.ExecuteWithProvider((rand) =>
-               {
-                   using (var reader = new CsvReader(YearlyIndividualsData[deltaYear]))
-                   {
-                       int columns;
-                       while (reader.LoadLine(out columns))
-                       {
-                           if (columns >= 22)
-                           {
-                               int age, sex, maritalStatus;
-                               // read in the age
-                               reader.Get(out age, 5);
-                               // make sure that this record is old enough before loading it in
-                               if (age < Parent.AgeOfMaturity)
-                               {
-                                   continue;
-                               }
-                               // get sex
-                               reader.Get(out sex, 6);
-                               reader.Get(out maritalStatus, 7);
-                               var person = CreatePerson(rand.Take(), age, sex, maritalStatus);
-                               if (person.MaritalStatus == MaritalStatus.Married)
-                               {
-                                   person.MaritalStatus = MaritalStatus.Single;
-                               }
-                               var family = new Family();
-                               family.Persons.Add(person);
-                               pool.Add(family);
-                           }
-                       }
-                   }
-               });
+                using (var reader = new CsvReader(YearlyIndividualsData[deltaYear]))
+                {
+                    int columns;
+                    while (reader.LoadLine(out columns))
+                    {
+                        if (columns >= 22)
+                        {
+                            int age, sex, maritalStatus;
+                            // read in the age
+                            reader.Get(out age, 5);
+                            // make sure that this record is old enough before loading it in
+                            if (age < Parent.AgeOfMaturity)
+                            {
+                                continue;
+                            }
+                            // get sex
+                            reader.Get(out sex, 6);
+                            reader.Get(out maritalStatus, 7);
+                            var person = CreatePerson(rand.Take(), age, sex, maritalStatus);
+                            if (person.MaritalStatus == MaritalStatus.Married)
+                            {
+                                person.MaritalStatus = MaritalStatus.Single;
+                            }
+                            var family = new Family();
+                            family.Persons.Add(person);
+                            pool.Add(family);
+                        }
+                    }
+                }
                 return pool;
             }
 
@@ -411,8 +405,19 @@ namespace TMG.Ilute.Model.Demographic
             internal void Execute(int deltaYear, Repository<Household> householdRepository, Repository<Family> familyRepository, Repository<Person> personRepo)
             {
                 // get the pool of individuals to use
-                var familyPool = BuildFamilyPool(deltaYear);
-                var individualPool = BuildIndividualPool(deltaYear);
+                List<Family> familyPool = null, individualPool = null;
+                var familySeed = (uint)(Parent.RandomGenerator.Take() * uint.MaxValue);
+                var individualSeed = (uint)(Parent.RandomGenerator.Take() * uint.MaxValue);
+                Parallel.Invoke(
+                    () =>
+                    {
+                        Rand rand = new Rand(familySeed);
+                        familyPool = BuildFamilyPool(deltaYear, rand);
+                    }, () =>
+                    {
+                        Rand rand = new Rand(individualSeed);
+                        individualPool = BuildIndividualPool(deltaYear, rand);
+                    });
                 var targetPersons = (int)(Parent.NumberOfImmigrantsBySimulationYear[deltaYear + (RegionNumber - 1) * 20] * Scale);
                 Repository.GetRepository(Parent.LogSource).WriteToLog($"Number of persons to add in {Name} in {deltaYear} target additions are {targetPersons}.");
                 Parent.RandomGenerator.ExecuteWithProvider((rand) =>
@@ -512,6 +517,7 @@ namespace TMG.Ilute.Model.Demographic
                         Family = newFamily,
                         LabourForceStatus = person.LabourForceStatus,
                         Spouse = person.Spouse,
+                        MaritalStatus = person.MaritalStatus
                     };
                     newPersons.Add(newPerson);
                 }
@@ -544,19 +550,16 @@ namespace TMG.Ilute.Model.Demographic
 
         public void Execute(int year)
         {
-            if (year > FirstYear)
+            Repository.GetRepository(LogSource).WriteToLog($"Persons before immigration in year {year} {Repository.GetRepository(RepositoryPerson).Count}.");
+            var deltaYear = year - FirstYear;
+            foreach (var area in SimulationAreas)
             {
-                Repository.GetRepository(LogSource).WriteToLog($"Persons before immigration in year {year} {Repository.GetRepository(RepositoryPerson).Count}.");
-                var deltaYear = year - FirstYear;
-                foreach (var area in SimulationAreas)
-                {
-                    area.Execute(deltaYear,
-                        Repository.GetRepository(RepositoryHousehold),
-                        Repository.GetRepository(RepositoryFamily),
-                        Repository.GetRepository(RepositoryPerson));
-                }
-                Repository.GetRepository(LogSource).WriteToLog($"Persons after immigration in year {year} {Repository.GetRepository(RepositoryPerson).Count}.");
+                area.Execute(deltaYear,
+                    Repository.GetRepository(RepositoryHousehold),
+                    Repository.GetRepository(RepositoryFamily),
+                    Repository.GetRepository(RepositoryPerson));
             }
+            Repository.GetRepository(LogSource).WriteToLog($"Persons after immigration in year {year} {Repository.GetRepository(RepositoryPerson).Count}.");
         }
 
         public void RunFinished(int finalYear)

@@ -33,7 +33,7 @@ using XTMF;
 namespace TMG.Ilute.Model.Demographic.Validation
 {
 
-    public sealed class GatherMarriageStatusByYear : IExecuteYearly, IDisposable
+    public sealed class GatherMarriageStatusByYear : IExecuteYearly, ISelfContainedModule, IDisposable
     {
         [SubModelInformation(Required = true, Description = "The location to save the results to.")]
         public FileLocation SaveTo;
@@ -58,10 +58,19 @@ namespace TMG.Ilute.Model.Demographic.Validation
 
         public void BeforeFirstYear(int firstYear)
         {
-            if(Writer == null)
+            InitializeWriter();
+        }
+
+        private void InitializeWriter()
+        {
+            if (Writer == null)
             {
-                Writer = new StreamWriter(SaveTo);
-                Writer.WriteLine("Year,Gender,Age,Single,Married,Divorced,Widowed,MarriedSOS");
+                var exists = File.Exists(SaveTo);
+                Writer = new StreamWriter(SaveTo, true);
+                if (!exists)
+                {
+                    Writer.WriteLine("Year,Gender,Age,Single,Married,Divorced,Widowed,MarriedSOS");
+                }
             }
         }
 
@@ -78,7 +87,20 @@ namespace TMG.Ilute.Model.Demographic.Validation
             }
         }
 
-        public void Execute(int year)
+        public void Start()
+        {
+            try
+            {
+                InitializeWriter();
+                RunForYear("Initial");
+            }
+            finally
+            {
+                Dispose();
+            }
+        }
+
+        private void RunForYear(string year)
         {
             // gather the data
             int[][][] categories = new int[2][][];
@@ -92,18 +114,18 @@ namespace TMG.Ilute.Model.Demographic.Validation
                     categories[i][j] = new int[100];
                 }
             }
-            Parallel.ForEach(persons, (Person person) =>
+            foreach(var person in persons)
             {
                 if (person.Living == Living)
                 {
                     var genderCats = (person.Sex == Sex.Male ? categories[0] : categories[1]);
                     var vector = genderCats[ConvertToInt(person.MaritalStatus)];
                     var age = Math.Max(Math.Min(person.Age, vector.Length - 1), 0);
-                    Interlocked.Increment(ref vector[age]);
+                    vector[age]++;
                 }
-            });
+            }
             //write the data
-            for(int sex = 0; sex < 2; sex++)
+            for (int sex = 0; sex < 2; sex++)
             {
                 var start = year + "," + sex + ",";
                 for (int age = 0; age < categories[sex][0].Length; age++)
@@ -118,6 +140,11 @@ namespace TMG.Ilute.Model.Demographic.Validation
                     Writer.WriteLine();
                 }
             }
+        }
+
+        public void Execute(int year)
+        {
+            RunForYear(year.ToString());
         }
 
         private int ConvertToInt(MaritalStatus status)

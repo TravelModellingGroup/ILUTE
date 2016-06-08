@@ -74,8 +74,7 @@ namespace TMG.Ilute.Model.Demographic
 
         public void BeforeFirstYear(int firstYear)
         {
-            // this model executes in the second year since the population is known during synthesis
-            FirstYear = firstYear + 1;
+            FirstYear = firstYear;
             // Seed the Random Number Generator
             RandomStream.CreateRandomStream(ref RandomGenerator, Seed);
             // load in the data we will use for rates
@@ -90,10 +89,6 @@ namespace TMG.Ilute.Model.Demographic
         public void Execute(int year)
         {
             // make sure we are in a year that we should be simulating.
-            if(year < FirstYear)
-            {
-                return;
-            }
             int deltaYear = year - FirstYear;
             var log = Repository.GetRepository(LogSource);
             log.WriteToLog($"Finding people who will be giving birth for Year {year}");

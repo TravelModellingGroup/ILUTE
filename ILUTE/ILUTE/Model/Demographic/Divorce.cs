@@ -94,15 +94,32 @@ namespace TMG.Ilute.Model.Demographic
         {
         }
 
+        int FirstYear;
+
         public void BeforeFirstYear(int firstYear)
         {
+            FirstYear = firstYear;
             // Seed the Random Number Generator
             RandomStream.CreateRandomStream(ref RandomGenerator, Seed);
             // load in the data we will use for rates
-            DivorceData = FileUtility.LoadAllDataToFloat(DivorceRatesFile, false);
+            List<float> data = new List<float>();
+            using (CsvReader reader = new CsvReader(DivorceRatesFile, true))
+            {
+                int columns;
+                while(reader.LoadLine(out columns))
+                {
+                    if(columns >= 2)
+                    {
+                        float temp;
+                        reader.Get(out temp, 1);
+                        data.Add(temp);
+                    }
+                }
+            }
+            DivorceData = data.ToArray();
             // process the data so to remove all of the divides needed to replicate
             // BaseSurvival = DivorceData[MarriageDuration]/DivorceData[MarriageDuration - 1]
-            for (int i = 1; i < DivorceData.Length; i++)
+            for (int i = DivorceData.Length - 1; i > 0 ; i--)
             {
                 DivorceData[i] = DivorceData[i] / DivorceData[i - 1];
             }
@@ -110,6 +127,8 @@ namespace TMG.Ilute.Model.Demographic
 
         public void BeforeYearlyExecute(int year)
         {
+            DivorceProbability = 0.0;
+            NumberOfTimes = 0;
         }
 
         public void Execute(int year)
@@ -139,6 +158,7 @@ namespace TMG.Ilute.Model.Demographic
                    }
                }
            });
+            log.WriteToLog($"Divorce average probability: {DivorceProbability / NumberOfTimes}");
             log.WriteToLog($"Finished computing candidates to divorce for year {year} with {toDivoce.Count} divorces.");
             // After identifying all of the families to be divorced, do so.
             foreach (var family in toDivoce)
@@ -147,6 +167,9 @@ namespace TMG.Ilute.Model.Demographic
             }
             log.WriteToLog("Finished divorcing all families.");
         }
+
+        double DivorceProbability;
+        int NumberOfTimes;
 
         private bool CheckIfShouldDivorse(float pick, Family family, int currentYear)
         {
@@ -167,7 +190,9 @@ namespace TMG.Ilute.Model.Demographic
                 //TODO: yes this is 1980 even though the variable is called 1960PLUS
                 coVariateVector += MARRIED1960PLUS;
             }
-            var divorceProbability = (1 - (float)Math.Pow(baseSurvival, Math.Exp(coVariateVector))) * DivorceParameter;
+            var divorceProbability = Math.Max((1 - (float)Math.Pow(baseSurvival, Math.Exp(coVariateVector))) * DivorceParameter, 0.0f);
+            DivorceProbability += divorceProbability;
+            NumberOfTimes++;
             return (pick < divorceProbability);
         }
 

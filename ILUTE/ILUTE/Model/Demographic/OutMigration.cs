@@ -64,6 +64,7 @@ namespace TMG.Ilute.Model.Demographic
         {
         }
 
+
         public void BeforeFirstYear(int firstYear)
         {
             FirstYear = firstYear;
@@ -104,6 +105,8 @@ namespace TMG.Ilute.Model.Demographic
             var familiesMigrating = GetFamiliesToRemove(peopleMigrating);
             RemoveFromRepository(peopleMigrating, Repository.GetRepository(Persons));
             RemoveFromRepository(familiesMigrating, Repository.GetRepository(Families));
+            Repository.GetRepository(LogSource).WriteToLog($"Out migrating {peopleMigrating.Count} persons in year {currentYear}.");
+            Repository.GetRepository(LogSource).WriteToLog($"Out migrating {familiesMigrating.Count} complete families in year {currentYear}.");
         }
 
 
