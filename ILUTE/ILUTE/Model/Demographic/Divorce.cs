@@ -176,6 +176,7 @@ namespace TMG.Ilute.Model.Demographic
            });
             log.WriteToLog($"Divorce average probability: {DivorceProbability / NumberOfTimes}");
             log.WriteToLog($"Finished computing candidates to divorce for year {year} with {toDivoce.Count} divorces.");
+            NumberOfTimes = toDivoce.Count;
             // After identifying all of the families to be divorced, do so.
             foreach (var family in toDivoce)
             {
