@@ -34,7 +34,7 @@ using XTMF;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public sealed class Divorce : IExecuteYearly, IDisposable
+    public sealed class Divorce : IExecuteYearly, ICSVYearlySummary, IDisposable
     {
         [SubModelInformation(Required = true, Description = "The log to save the write to.")]
         public IDataSource<ExecutionLog> LogSource;
@@ -129,6 +129,22 @@ namespace TMG.Ilute.Model.Demographic
         {
             DivorceProbability = 0.0;
             NumberOfTimes = 0;
+        }
+
+        public List<string> Headers
+        {
+            get
+            {
+                return new List<string>() { "Divorce Probability", "Divorces" };
+            }
+        }
+
+        public List<float> YearlyResults
+        {
+            get
+            {
+                return new List<float>() {(float)DivorceProbability / NumberOfTimes, NumberOfTimes };
+            }
         }
 
         public void Execute(int year)

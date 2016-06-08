@@ -33,7 +33,7 @@ using TMG.Functions;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public sealed class MarriageMarket : MarketModel<Person, Person>, IExecuteYearly, IDisposable
+    public sealed class MarriageMarket : MarketModel<Person, Person>, IExecuteYearly, ICSVYearlySummary, IDisposable
     {
 
         [SubModelInformation(Required = true, Description = "The location of the information containing birth rates")]
@@ -249,6 +249,22 @@ namespace TMG.Ilute.Model.Demographic
         }
 
         int MarriagesInYear = 0;
+
+        public List<string> Headers
+        {
+            get
+            {
+                return new List<string>() { "Marriages" };
+            }
+        }
+
+        public List<float> YearlyResults
+        {
+            get
+            {
+                return new List<float>() { MarriagesInYear };
+            }
+        }
 
         protected override void ResolveSelection(Person seller, Person buyer)
         {

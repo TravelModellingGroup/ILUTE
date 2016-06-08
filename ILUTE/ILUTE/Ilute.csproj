@@ -103,9 +103,11 @@
     <Compile Include="Model\Utilities\DemographicDataLoader.cs" />
     <Compile Include="Model\Utilities\ExecutionLog.cs" />
     <Compile Include="Model\Utilities\FileUtility.cs" />
+    <Compile Include="Model\Utilities\ICSVYearlySummary.cs" />
     <Compile Include="Model\Utilities\MarketModel.cs" />
     <Compile Include="Model\Utilities\RemoteDataSource.cs" />
     <Compile Include="Model\Utilities\TemporalDataLoader.cs" />
+    <Compile Include="Model\Utilities\WriteCsvYearlySummary.cs" />
     <Compile Include="MultiYearTravelDemandModel.cs" />
     <Compile Include="Data\Demographics\Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

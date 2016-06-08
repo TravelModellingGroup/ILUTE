@@ -33,7 +33,7 @@ using System.Threading;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public sealed class DeathModel : IExecuteYearly, IDisposable
+    public sealed class DeathModel : IExecuteYearly, ICSVYearlySummary, IDisposable
     {
         private const int MaxAgeCategory = 75;
 
@@ -82,12 +82,30 @@ namespace TMG.Ilute.Model.Demographic
         {
         }
 
+        public List<string> Headers
+        {
+            get
+            {
+                return new List<string>() { "Deaths" };
+            }
+        }
+
+        public List<float> YearlyResults
+        {
+            get
+            {
+                return new List<float>() { NumberOfDeaths };
+            }
+        }
+
+        private int NumberOfDeaths;
+
         public void Execute(int year)
         {
             // make sure we are in a year that we should be simulating.
             int deltaYear = year - FirstYear;
             var log = Repository.GetRepository(LogSource);
-            int toOutputNumberOfDeaths = 0;
+            NumberOfDeaths = 0;
             log.WriteToLog($"Finding people who will be dying for Year {year}");
             RandomGenerator.ExecuteWithProvider((rand) =>
             {
@@ -111,10 +129,10 @@ namespace TMG.Ilute.Model.Demographic
                         }
                     }
                 }
-                toOutputNumberOfDeaths = numberOfDeaths;
+                NumberOfDeaths = numberOfDeaths;
             });
             Thread.MemoryBarrier();
-            log.WriteToLog($"Number of deaths in {year}: {toOutputNumberOfDeaths}");
+            log.WriteToLog($"Number of deaths in {year}: {NumberOfDeaths}");
         }
 
         private int GetDataIndex(int age, Sex sex, MaritalStatus status, int deltaYear)

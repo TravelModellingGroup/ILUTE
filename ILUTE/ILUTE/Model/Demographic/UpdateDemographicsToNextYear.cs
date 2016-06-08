@@ -23,13 +23,14 @@ using System.Text;
 using System.Threading.Tasks;
 using TMG.Ilute.Data;
 using TMG.Ilute.Data.Demographics;
+using TMG.Ilute.Model.Utilities;
 using XTMF;
 
 
 namespace TMG.Ilute.Model.Demographic
 {
     [ModuleInformation(Description = "This module will update the population's information to the next year.")]
-    public class UpdateDemographicsToNextYear : IExecuteYearly
+    public class UpdateDemographicsToNextYear : IExecuteYearly, ICSVYearlySummary
     {
         [RunParameter("Increase Age of Deceased", true, "If this is false a person will not age after they die.")]
         public bool IncreaseAgeOfDeceased;
@@ -62,9 +63,28 @@ namespace TMG.Ilute.Model.Demographic
             UpdateAge();
         }
 
+        public List<string> Headers
+        {
+            get
+            {
+                return new List<string>() { "Population During Update" };
+            }
+        }
+
+        public List<float> YearlyResults
+        {
+            get
+            {
+                return new List<float>() { (int) TotalPeople };
+            }
+        }
+
+        private float TotalPeople;
+
         private void UpdateAge()
         {
             var repo = Repository.GetRepository(PersonRepository);
+            TotalPeople = repo.Count;
             if (IncreaseAgeOfDeceased)
             {
                 foreach (var person in repo)

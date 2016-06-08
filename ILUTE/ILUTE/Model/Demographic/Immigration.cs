@@ -33,7 +33,7 @@ using XTMF;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public sealed class Immigration : IExecuteYearly, IDisposable
+    public sealed class Immigration : IExecuteYearly, ICSVYearlySummary, IDisposable
     {
         [SubModelInformation(Required = true, Description = "The log to save the write to.")]
         public IDataSource<ExecutionLog> LogSource;
@@ -59,8 +59,6 @@ namespace TMG.Ilute.Model.Demographic
         public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
 
         private int FirstYear;
-
-
 
         public void AfterYearlyExecute(int year)
         {
@@ -548,9 +546,28 @@ namespace TMG.Ilute.Model.Demographic
 
         }
 
+        public List<string> Headers
+        {
+            get
+            {
+                return new List<string>() { "In-migration" };
+            }
+        }
+
+        public List<float> YearlyResults
+        {
+            get
+            {
+                return new List<float>() { InMigrants };
+            }
+        }
+
+        private float InMigrants;
+
         public void Execute(int year)
         {
-            Repository.GetRepository(LogSource).WriteToLog($"Persons before immigration in year {year} {Repository.GetRepository(RepositoryPerson).Count}.");
+            var before = Repository.GetRepository(RepositoryPerson).Count;
+            Repository.GetRepository(LogSource).WriteToLog($"Persons before immigration in year {year} {before}.");
             var deltaYear = year - FirstYear;
             foreach (var area in SimulationAreas)
             {
@@ -559,7 +576,9 @@ namespace TMG.Ilute.Model.Demographic
                     Repository.GetRepository(RepositoryFamily),
                     Repository.GetRepository(RepositoryPerson));
             }
-            Repository.GetRepository(LogSource).WriteToLog($"Persons after immigration in year {year} {Repository.GetRepository(RepositoryPerson).Count}.");
+            var after = Repository.GetRepository(RepositoryPerson).Count;
+            InMigrants = after - before;
+            Repository.GetRepository(LogSource).WriteToLog($"Persons after immigration in year {year} {after}.");
         }
 
         public void RunFinished(int finalYear)

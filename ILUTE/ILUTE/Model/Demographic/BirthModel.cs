@@ -32,7 +32,7 @@ using System.Collections.Concurrent;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public class BirthModel : IExecuteYearly, IDisposable
+    public class BirthModel : IExecuteYearly, ICSVYearlySummary, IDisposable
     {
 
         public string Name { get; set; }
@@ -40,6 +40,22 @@ namespace TMG.Ilute.Model.Demographic
         public float Progress { get; set; }
 
         public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
+
+        public List<string> Headers
+        {
+            get
+            {
+                return new List<string>() { "Births" };
+            }
+        }
+
+        public List<float> YearlyResults
+        {
+            get
+            {
+                return new List<float>() { BirthsInLastYear };
+            }
+        }
 
         private const float ProbabilityOfBabyBeingFemale = 0.51f;
 
@@ -86,6 +102,8 @@ namespace TMG.Ilute.Model.Demographic
             
         }
 
+        private float BirthsInLastYear;
+
         public void Execute(int year)
         {
             // make sure we are in a year that we should be simulating.
@@ -114,6 +132,7 @@ namespace TMG.Ilute.Model.Demographic
            });
             log.WriteToLog($"Processing Births for Year {year}");
             var numberOfChildrenBorn = havingAChild.Count;
+            BirthsInLastYear = numberOfChildrenBorn;
             RandomGenerator.ExecuteWithProvider((rand) =>
            {
                 // process each person having a child

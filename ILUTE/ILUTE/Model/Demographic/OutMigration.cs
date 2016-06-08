@@ -30,7 +30,7 @@ using XTMF;
 namespace TMG.Ilute.Model.Demographic
 {
 
-    public class OutMigration : IExecuteYearly, IDisposable
+    public class OutMigration : IExecuteYearly, ICSVYearlySummary, IDisposable
     {
 
         [SubModelInformation(Required = true, Description = "The source of persons.")]
@@ -41,6 +41,9 @@ namespace TMG.Ilute.Model.Demographic
 
         [SubModelInformation(Required = true, Description = "The source of persons.")]
         public IDataSource<Repository<Household>> Households;
+
+        [RunParameter("Age of Maturity", 16, "The age at which a person is allow to out migrate.")]
+        public int AgeOfMaturity;
 
         [RunParameter("Random Seed", 12345u, "The seed to use for the random number generator.")]
         public uint Seed;
@@ -101,12 +104,32 @@ namespace TMG.Ilute.Model.Demographic
         public void Execute(int currentYear)
         {
             int deltaYear = currentYear - FirstYear;
-            var peopleMigrating = GetPersonsToOutMigrate(Repository.GetRepository(Persons), GetValue(deltaYear, 0));
+            var personRepository = Repository.GetRepository(Persons);
+            var peopleMigrating = GetPersonsToOutMigrate(personRepository, GetValue(deltaYear, 0));
             var familiesMigrating = GetFamiliesToRemove(peopleMigrating);
-            RemoveFromRepository(peopleMigrating, Repository.GetRepository(Persons));
+            RemoveFromRepository(peopleMigrating, personRepository);
             RemoveFromRepository(familiesMigrating, Repository.GetRepository(Families));
+            OutMigrations = peopleMigrating.Count;
             Repository.GetRepository(LogSource).WriteToLog($"Out migrating {peopleMigrating.Count} persons in year {currentYear}.");
             Repository.GetRepository(LogSource).WriteToLog($"Out migrating {familiesMigrating.Count} complete families in year {currentYear}.");
+        }
+
+        float OutMigrations;
+
+        public List<string> Headers
+        {
+            get
+            {
+                return new List<string>() { "OutMigrations" };
+            }
+        }
+
+        public List<float> YearlyResults
+        {
+            get
+            {
+                return new List<float>() { OutMigrations };
+            }
         }
 
 
@@ -117,6 +140,7 @@ namespace TMG.Ilute.Model.Demographic
            {
                foreach (var person in persons)
                {
+                   if(person.Living && person.Age >= AgeOfMaturity)
                    if (rand.Take() < rateForYear)
                    {
                        toOutMigrate.Add(person);
