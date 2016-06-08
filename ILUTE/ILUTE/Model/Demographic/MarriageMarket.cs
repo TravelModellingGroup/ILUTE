@@ -64,6 +64,7 @@ namespace TMG.Ilute.Model.Demographic
         public uint Seed;
 
         private const int MinimumAgeForMarriage = 16;
+        private const int MaximumAgeForMarriage = 75;
 
         public void AfterYearlyExecute(int year)
         {
@@ -186,7 +187,8 @@ namespace TMG.Ilute.Model.Demographic
                    // only people who are living this year are allowed into the market
                    if (person.Living)
                    {
-                       if (person.Age >= MinimumAgeForMarriage)
+                       var age = person.Age;
+                       if (age >= MinimumAgeForMarriage && age <= MaximumAgeForMarriage)
                        {
                            // index will be -1 if they are already married
                            var index = GetDataIndex(person.Age, person.Sex, person.MaritalStatus, deltaYear);
