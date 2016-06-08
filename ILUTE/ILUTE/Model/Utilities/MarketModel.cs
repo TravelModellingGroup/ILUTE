@@ -27,6 +27,8 @@ using XTMF;
 namespace TMG.Ilute.Model.Utilities
 {
     public abstract class MarketModel<Buyer, Seller> : IModule
+        where Buyer : IndexedObject
+        where Seller : IndexedObject
     {
         public struct SellerValues
         {
@@ -168,10 +170,6 @@ namespace TMG.Ilute.Model.Utilities
             // get the best option for each buyer
             for (int i = 0; i < choiceSets.Count; i++)
             {
-                if(choiceSets[i].PotentialBuyers.Length == 0)
-                {
-                    Console.WriteLine("got here");
-                }
                 var potential = choiceSets[i].PotentialBuyers[0];
                 if (potential.Buyer != null)
                 {

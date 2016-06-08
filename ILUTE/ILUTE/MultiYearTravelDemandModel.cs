@@ -112,7 +112,8 @@ namespace TMG.Ilute
                 }
                 for (int i = 0; i < RunYearly.Length && !_Exit; i++)
                 {
-                    _Status = () => RunYearly[i].ToString();
+                    _Status = () => (year + this.StartYear) + ": " + RunYearly[i].ToString();
+                    Progress = (float)year / NumberOfYears + (1.0f / NumberOfYears) * ((float)i / RunYearly.Length);
                     RunYearly[i].Execute(StartYear + year);
                 }
                 for (int i = 0; i < RunYearly.Length && !_Exit; i++)

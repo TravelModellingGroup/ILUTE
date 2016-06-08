@@ -72,6 +72,7 @@ namespace TMG.Ilute.Model.Demographic
         {
             FirstYear = firstYear;
             RandomStream.CreateRandomStream(ref RandomGenerator, Seed);
+            // 0.0162072617395099F goes at the end because in the old model 1986 was the base year, but the first simulated year was actually 1987
             OutMigrationRates = new float[] { 0.0271659618478562F, 0.0303916293418877F, 0.0272732029843644F, 0.0220824955156408F, 0.0213697786084989F, 0.0177289505220036F
             , 0.0160643425773606F, 0.0147738571582634F, 0.0138364011036988F, 0.015226569069734F, 0.0155279653934537F, 0.0148450065745448F, 0.0178320039233872F,
             0.0160084860346674F, 0.0186621669919191F, 0.0182672232069938F, 0.0172703521451992F, 0.0159722481340647F, 0.0144900720933214F, 0.0162072617395099F};
@@ -140,10 +141,12 @@ namespace TMG.Ilute.Model.Demographic
            {
                foreach (var person in persons)
                {
-                   if(person.Living && person.Age >= AgeOfMaturity)
-                   if (rand.Take() < rateForYear)
+                   if (person.Living && person.Age >= AgeOfMaturity)
                    {
-                       toOutMigrate.Add(person);
+                       if (rand.Take() < rateForYear)
+                       {
+                           toOutMigrate.Add(person);
+                       }
                    }
                }
            });
