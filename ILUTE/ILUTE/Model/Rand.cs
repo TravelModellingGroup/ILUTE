@@ -99,6 +99,7 @@ namespace TMG.Ilute.Model
         }
 
         [DllImport("IluteHPC.dll", CharSet = CharSet.Unicode)]
+        [System.Security.SuppressUnmanagedCodeSecurity]
         public static unsafe extern int RandUpdateRandomVector(uint* mt);
 
         private uint Next()

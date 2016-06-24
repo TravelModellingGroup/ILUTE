@@ -38,10 +38,18 @@ namespace TMG.Ilute.Data.Housing
         /// </summary>
         public int Rooms { get; set; }
 
+        /// <summary>
+        /// The flat index into the zone system where this Dwelling resides.
+        /// </summary>
+        public int Zone { get; set; }
+
+        /// <summary>
+        /// The household the resides in the dwelling
+        /// </summary>
         public Household Household { get; set; }
 
         /// <summary>
-        /// The number of dollars
+        /// The number of dollars that was last spent to buy the property
         /// </summary>
         public Money Value { get; set; }
 

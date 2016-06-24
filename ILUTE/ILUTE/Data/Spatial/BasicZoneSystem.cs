@@ -98,7 +98,7 @@ namespace TMG.Ilute.Data.Spatial
                 var xL = new List<float>();
                 var yL = new List<float>();
                 var areaL = new List<float>();
-                foreach (var dataPoint in loadingCollection)
+                foreach (var dataPoint in loadingCollection.GetConsumingEnumerable())
                 {
                     numberL.Add(dataPoint.Number);
                     xL.Add(dataPoint.X);
