@@ -101,7 +101,22 @@ namespace TMG.Ilute.Data.Spatial
         private static float[] ColumnNormalize(float[] map, int columns)
         {
             var rows = map.Length / columns;
-            for (int column = 0; column < columns; column++)
+            int column = 0;
+            for (; column < columns - Vector<float>.Count; column += Vector<float>.Count)
+            {
+                var vTotal = Vector<float>.Zero;
+                for (int row = 0; row < rows; row++)
+                {
+                    vTotal += new Vector<float>(map, row * columns + column);
+                }
+                vTotal = VectorHelper.SelectIfFinite(Vector<float>.One / vTotal, Vector<float>.Zero);
+                for (int row = 0; row < rows; row++)
+                {
+                    int index = row * columns + column;
+                    (new Vector<float>(map, index) * vTotal).CopyTo(map, index);
+                }
+            }
+            for (; column < columns; column++)
             {
                 var total = 0.0f;
                 for (int row = 0; row < rows; row++)
