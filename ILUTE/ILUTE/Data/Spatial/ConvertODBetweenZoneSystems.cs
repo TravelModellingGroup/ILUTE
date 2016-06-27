@@ -19,9 +19,12 @@
 using Datastructure;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using TMG.Functions;
 using TMG.Input;
 using XTMF;
 
@@ -59,7 +62,7 @@ namespace TMG.Ilute.Data.Spatial
 
         public bool Loaded
         {
-            get;set;
+            get; set;
         }
 
         public bool RuntimeValidation(ref string error)
@@ -74,12 +77,6 @@ namespace TMG.Ilute.Data.Spatial
             return Data;
         }
 
-        private class Mapping
-        {
-            internal int Converted;
-            internal float Apply;
-        }
-
         public void LoadData()
         {
             var originalZones = LoadZoneSystem(OriginalZoneSystem);
@@ -87,11 +84,14 @@ namespace TMG.Ilute.Data.Spatial
             var ret = SparseTwinIndex<float>.CreateSquareTwinIndex(convertToZones, convertToZones);
             var original = GetData(Original);
             var flat = ret.GetFlatData();
-            var map = BuildMapping(originalZones, convertToZones);
-            switch(Aggregation)
+            var map = ColumnNormalize(BuildMapping(originalZones, convertToZones), originalZones.Length);
+            switch (Aggregation)
             {
                 case Aggregations.Sum:
+                    Stopwatch watch = Stopwatch.StartNew();
                     ApplySum(map, flat, original);
+                    watch.Stop();
+                    Console.WriteLine(watch.ElapsedMilliseconds);
                     break;
                 case Aggregations.Average:
                     break;
@@ -100,11 +100,69 @@ namespace TMG.Ilute.Data.Spatial
             Loaded = true;
         }
 
+        private static float[] ColumnNormalize(float[] map, int columns)
+        {
+            var rows = map.Length / columns;
+            for (int column = 0; column < columns; column++)
+            {
+                var total = 0.0f;
+                for (int row = 0; row < rows; row++)
+                {
+                    total += map[row * columns + column];
+                }
+                total = 1.0f / total;
+                if (float.IsNaN(total) || float.IsInfinity(total))
+                {
+                    total = 0.0f;
+                }
+                for (int row = 0; row < rows; row++)
+                {
+                    map[row * columns + column] *= total;
+                }
+            }
+            return map;
+        }
+
         private void ApplySum(float[] map, float[][] flatRet, SparseTwinIndex<float> original)
         {
             var flatOrigin = original.GetFlatData();
-            var originalSparse = original.ValidIndexArray();
-            
+            Parallel.For(0, flatRet.Length, (int i) =>
+            {
+                for (int j = 0; j < flatRet[i].Length; j++)
+                {
+                    flatRet[i][j] = ComputeSum(map, flatOrigin, i, j);
+                }
+            });
+        }
+
+        private float ComputeSum(float[] map, float[][] flatOrigin, int retRow, int retColumn)
+        {
+            var ret = 0.0f;
+            var rowBase = flatOrigin.Length * retRow;
+            var columnBase = flatOrigin.Length * retColumn;
+            Vector<float> vRet = Vector<float>.Zero;
+            for (int i = 0; i < flatOrigin.Length; i++)
+            {
+                var iFactor = map[rowBase + i];
+                var row = flatOrigin[i];
+                if (iFactor > 0)
+                {
+                    int j = 0;
+                    Vector<float> iFactorV = new Vector<float>(iFactor);
+                    for (; j < row.Length - Vector<float>.Count; j += Vector<float>.Count)
+                    {
+                        var rowV = new Vector<float>(row, j);
+                        var mapV = new Vector<float>(map, columnBase + j);
+                        vRet += rowV * iFactorV * mapV;
+                    }
+                    for (; j < row.Length; j++)
+                    {
+                        ret += row[j] * iFactor * map[columnBase + j];
+                    }
+                }
+            }
+            ret += Vector.Dot(vRet, Vector<float>.One);
+            return ret;
         }
 
         private SparseTwinIndex<float> GetData(IDataSource<SparseTwinIndex<float>> original)
@@ -131,7 +189,7 @@ namespace TMG.Ilute.Data.Spatial
                         // convert the indexes into flat index lookups
                         origin = Array.BinarySearch(originalZones, origin);
                         dest = Array.BinarySearch(convertToZones, dest);
-                        map[dest * convertToZones.Length + origin] = ratio;
+                        map[dest * originalZones.Length + origin] = ratio;
                     }
                 }
             }

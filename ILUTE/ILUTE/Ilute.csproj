@@ -79,6 +79,7 @@
     <Compile Include="Data\Demographics\Family.cs" />
     <Compile Include="Data\Demographics\Household.cs" />
     <Compile Include="Data\Spatial\ConvertODBetweenZoneSystems.cs" />
+    <Compile Include="Data\Spatial\LoadCSVODGivenZoneSystem.cs" />
     <Compile Include="Data\Spatial\ZoneSystem.cs" />
     <Compile Include="ExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteMonthly.cs" />
