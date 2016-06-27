@@ -1,0 +1,157 @@
+﻿/*
+    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+
+    This file is part of ILUTE, a set of modules for XTMF.
+
+    XTMF is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    XTMF is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
+*/
+using Datastructure;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using TMG.Input;
+using XTMF;
+
+namespace TMG.Ilute.Data.Spatial
+{
+
+    public class ConvertODBetweenZoneSystems : IDataSource<SparseTwinIndex<float>>
+    {
+        [SubModelInformation(Required = true, Description = "The zone system the OD data was designed for")]
+        public IDataSource<ZoneSystem> OriginalZoneSystem;
+
+        [SubModelInformation(Required = true, Description = "The zone system the OD data will be converted for")]
+        public IDataSource<ZoneSystem> ConvertToZoneSystem;
+
+        [SubModelInformation(Required = true, Description = "The data to convert")]
+        public IDataSource<SparseTwinIndex<float>> Original;
+
+        [SubModelInformation(Required = true, Description = "The location to read the mapping file from")]
+        public FileLocation MapFile;
+
+        public string Name { get; set; }
+
+        public float Progress { get; set; }
+
+        public Tuple<byte, byte, byte> ProgressColour { get { return new Tuple<byte, byte, byte>(50, 150, 50); } }
+
+        public enum Aggregations
+        {
+            Sum,
+            Average
+        }
+
+        [RunParameter("Aggregation", "Sum", typeof(Aggregations), "The aggregation to apply")]
+        public Aggregations Aggregation;
+
+        public bool Loaded
+        {
+            get;set;
+        }
+
+        public bool RuntimeValidation(ref string error)
+        {
+            return true;
+        }
+
+        private SparseTwinIndex<float> Data;
+
+        public SparseTwinIndex<float> GiveData()
+        {
+            return Data;
+        }
+
+        private class Mapping
+        {
+            internal int Converted;
+            internal float Apply;
+        }
+
+        public void LoadData()
+        {
+            var originalZones = LoadZoneSystem(OriginalZoneSystem);
+            var convertToZones = LoadZoneSystem(ConvertToZoneSystem);
+            var ret = SparseTwinIndex<float>.CreateSquareTwinIndex(convertToZones, convertToZones);
+            var original = GetData(Original);
+            var flat = ret.GetFlatData();
+            var map = BuildMapping(originalZones, convertToZones);
+            switch(Aggregation)
+            {
+                case Aggregations.Sum:
+                    ApplySum(map, flat, original);
+                    break;
+                case Aggregations.Average:
+                    break;
+            }
+            Data = ret;
+            Loaded = true;
+        }
+
+        private void ApplySum(float[] map, float[][] flatRet, SparseTwinIndex<float> original)
+        {
+            var flatOrigin = original.GetFlatData();
+            var originalSparse = original.ValidIndexArray();
+            
+        }
+
+        private SparseTwinIndex<float> GetData(IDataSource<SparseTwinIndex<float>> original)
+        {
+            return Repository.GetRepository(Original);
+        }
+
+        private float[] BuildMapping(int[] originalZones, int[] convertToZones)
+        {
+            var map = new float[originalZones.Length * convertToZones.Length];
+            using (var reader = new CsvReader(MapFile))
+            {
+                int columns;
+                reader.LoadLine();
+                while (reader.LoadLine(out columns))
+                {
+                    if (columns >= 3)
+                    {
+                        int origin, dest;
+                        float ratio;
+                        reader.Get(out origin, 0);
+                        reader.Get(out dest, 1);
+                        reader.Get(out ratio, 2);
+                        // convert the indexes into flat index lookups
+                        origin = Array.BinarySearch(originalZones, origin);
+                        dest = Array.BinarySearch(convertToZones, dest);
+                        map[dest * convertToZones.Length + origin] = ratio;
+                    }
+                }
+            }
+            return map;
+        }
+
+        private int[] LoadZoneSystem(IDataSource<ZoneSystem> zoneSystem)
+        {
+            if (!zoneSystem.Loaded)
+            {
+                zoneSystem.LoadData();
+            }
+            return zoneSystem.GiveData().ZoneNumber;
+        }
+
+        public void UnloadData()
+        {
+            Data = null;
+            Loaded = false;
+        }
+    }
+}
+

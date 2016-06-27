@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using TMG.Ilute.Data;
 using TMG.Ilute.Data.Demographics;
 using TMG.Ilute.Data.Housing;
+using TMG.Ilute.Data.Spatial;
 using TMG.Ilute.Model.Utilities;
 using TMG.Input;
 using XTMF;
@@ -62,6 +63,9 @@ Household:
 
         [SubModelInformation(Required = true, Description = "The resource containing dwelling information.")]
         public IDataSource<Repository<Dwelling>> RepositoryDwellings;
+
+        [SubModelInformation(Required = true, Description = "The zone system to assign dwellings to.")]
+        public IDataSource<ZoneSystem> ZoneSystem;
 
         [SubModelInformation(Required = false, Description = "")]
         public IDataSource<ExecutionLog> LogSource;
@@ -120,6 +124,7 @@ Household:
             var householdRepo = Repository.GetRepository(RepositoryHousehold);
             var dwellingRepo = Repository.GetRepository(RepositoryDwellings);
             var initialDate = new Date(InitialYear, 0);
+            var zoneSystem = Repository.GetRepository(ZoneSystem);
             using (var reader = new CsvReader(InitialHouseholdFile, true))
             {
                 int columns;
@@ -156,6 +161,7 @@ Household:
                         h.Dwelling = d;
                         h.HouseholdType = ConvertHouseholdType(hhcomp);
                         d.Exists = true;
+                        d.Zone = zoneSystem.GetFlatIndex(ctcode);
                         d.Rooms = rooms;
                         d.Value = new Money(value, initialDate);
                         h.Tenure = ConvertTenureFromCensus(tenur);

@@ -78,7 +78,8 @@
     <Compile Include="Data\Repository.cs" />
     <Compile Include="Data\Demographics\Family.cs" />
     <Compile Include="Data\Demographics\Household.cs" />
-    <Compile Include="Data\Spatial\BasicZoneSystem.cs" />
+    <Compile Include="Data\Spatial\ConvertODBetweenZoneSystems.cs" />
+    <Compile Include="Data\Spatial\ZoneSystem.cs" />
     <Compile Include="ExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteYearly.cs" />
@@ -97,6 +98,7 @@
     <Compile Include="Model\Demographic\Validation\GatherBirthsByAge.cs" />
     <Compile Include="Model\Demographic\Validation\GatherMarriageStatusByYear.cs" />
     <Compile Include="Model\Demographic\Validation\GatherPopulationByAges.cs" />
+    <Compile Include="Model\Housing\Validation\CountDwellingsByZone.cs" />
     <Compile Include="Model\Rand.cs" />
     <Compile Include="Model\RandomStream.cs" />
     <Compile Include="Model\Utilities\CurrencyManager.cs" />

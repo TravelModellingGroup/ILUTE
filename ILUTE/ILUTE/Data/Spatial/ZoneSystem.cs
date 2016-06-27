@@ -174,5 +174,10 @@ namespace TMG.Ilute.Data.Spatial
         {
             Loaded = false;
         }
+
+        public int GetFlatIndex(int zoneNumber)
+        {
+            return Array.BinarySearch(ZoneNumber, zoneNumber);
+        }
     }
 }
