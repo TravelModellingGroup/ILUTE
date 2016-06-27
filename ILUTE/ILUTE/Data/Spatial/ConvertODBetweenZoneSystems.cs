@@ -88,12 +88,10 @@ namespace TMG.Ilute.Data.Spatial
             switch (Aggregation)
             {
                 case Aggregations.Sum:
-                    Stopwatch watch = Stopwatch.StartNew();
                     ApplySum(map, flat, original);
-                    watch.Stop();
-                    Console.WriteLine(watch.ElapsedMilliseconds);
                     break;
                 case Aggregations.Average:
+                    ApplyAverage(map, flat, original);
                     break;
             }
             Data = ret;
@@ -133,6 +131,55 @@ namespace TMG.Ilute.Data.Spatial
                     flatRet[i][j] = ComputeSum(map, flatOrigin, i, j);
                 }
             });
+        }
+
+        private void ApplyAverage(float[] map, float[][] flatRet, SparseTwinIndex<float> original)
+        {
+            var flatOrigin = original.GetFlatData();
+            Parallel.For(0, flatRet.Length, (int i) =>
+            {
+                for (int j = 0; j < flatRet[i].Length; j++)
+                {
+                    flatRet[i][j] = ComputeAverage(map, flatOrigin, i, j);
+                }
+            });
+        }
+
+        private float ComputeAverage(float[] map, float[][] flatOrigin, int retRow, int retColumn)
+        {
+            var ret = 0.0f;
+            var rowBase = flatOrigin.Length * retRow;
+            var columnBase = flatOrigin.Length * retColumn;
+            Vector<float> vRet = Vector<float>.Zero;
+            Vector<float> vFactorSum = Vector<float>.Zero;
+            float factorSum = 0.0f;
+            for (int i = 0; i < flatOrigin.Length; i++)
+            {
+                var iFactor = map[rowBase + i];
+                var row = flatOrigin[i];
+                if (iFactor > 0)
+                {
+                    int j = 0;
+                    Vector<float> iFactorV = new Vector<float>(iFactor);
+                    for (; j < row.Length - Vector<float>.Count; j += Vector<float>.Count)
+                    {
+                        var rowV = new Vector<float>(row, j);
+                        var mapV = new Vector<float>(map, columnBase + j);
+                        var factor = iFactorV * mapV;
+                        vFactorSum += factor;
+                        vRet += rowV * factor;
+                    }
+                    for (; j < row.Length; j++)
+                    {
+                        var factor = iFactor * map[columnBase + j];
+                        factorSum += factor;
+                        ret += row[j] * factor;
+                    }
+                }
+            }
+            ret += Vector.Dot(vRet, Vector<float>.One);
+            ret = ret / (factorSum + Vector.Dot(vFactorSum, Vector<float>.One));
+            return ret;
         }
 
         private float ComputeSum(float[] map, float[][] flatOrigin, int retRow, int retColumn)
