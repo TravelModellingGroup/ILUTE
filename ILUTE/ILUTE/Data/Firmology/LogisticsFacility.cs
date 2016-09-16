@@ -26,11 +26,32 @@ namespace TMG.Ilute.Data.Firmology
 {
     public class LogisticsFacility
     {
+        /// <summary>
+        /// The establishment that this logistics facility is contained in.
+        /// </summary>
         public BusinessEstablishment Establishment { get; private set; }
+
+        /// <summary>
+        /// The vehicles owned by this logistics facility
+        /// </summary>
+        public List<Vehicle> Vehicles { get; private set; }
+
+        /// <summary>
+        /// Warehouses controlled by this logistics facility
+        /// </summary>
+        public List<Warehouse> Warehouses { get; private set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public List<TranshipCentre> TranshipCentres { get; private set; }
 
         public LogisticsFacility(BusinessEstablishment establishment)
         {
             Establishment = establishment;
+            Vehicles = new List<Vehicle>();
+            Warehouses = new List<Warehouse>();
+            TranshipCentres = new List<TranshipCentre>();
         }
     }
 }

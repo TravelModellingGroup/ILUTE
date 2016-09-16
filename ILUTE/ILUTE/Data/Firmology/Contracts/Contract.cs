@@ -24,13 +24,13 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Data.Firmology.Contracts
 {
-    public class LogisticsServiceContract : Contract
+    public class Contract
     {
-        public Firm Consumer { get; private set; }
+        public BusinessEstablishment Producer { get; private set; }
 
-        public LogisticsServiceContract(BusinessEstablishment producer, Firm consumer) : base(producer)
+        public Contract(BusinessEstablishment producer)
         {
-            Consumer = consumer;
+            Producer = producer;
         }
     }
 }

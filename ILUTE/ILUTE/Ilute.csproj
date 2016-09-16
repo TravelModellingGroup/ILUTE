@@ -79,6 +79,7 @@
     <Compile Include="Data\Firmology\CommodityProductionFacility.cs" />
     <Compile Include="Data\Firmology\Contracts\BusinessServiceContract.cs" />
     <Compile Include="Data\Firmology\Contracts\CommodityContract.cs" />
+    <Compile Include="Data\Firmology\Contracts\Contract.cs" />
     <Compile Include="Data\Firmology\Contracts\LogisticsServiceContract.cs" />
     <Compile Include="Data\Firmology\Firm.cs" />
     <Compile Include="Data\Firmology\LogisticsFacility.cs" />
