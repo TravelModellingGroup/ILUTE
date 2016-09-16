@@ -74,6 +74,16 @@
     <Compile Include="Data\Demographics\DemographicEnumerations.cs" />
     <Compile Include="Data\Demographics\Education\EducationLevels.cs" />
     <Compile Include="Data\Demographics\Education\PersonalEducation.cs" />
+    <Compile Include="Data\Firmology\BusinessEstablishment.cs" />
+    <Compile Include="Data\Firmology\BusinessServiceFacility.cs" />
+    <Compile Include="Data\Firmology\CommodityProductionFacility.cs" />
+    <Compile Include="Data\Firmology\Contracts\BusinessServiceContract.cs" />
+    <Compile Include="Data\Firmology\Contracts\CommodityContract.cs" />
+    <Compile Include="Data\Firmology\Contracts\LogisticsServiceContract.cs" />
+    <Compile Include="Data\Firmology\Firm.cs" />
+    <Compile Include="Data\Firmology\LogisticsFacility.cs" />
+    <Compile Include="Data\Firmology\TranshipCentre.cs" />
+    <Compile Include="Data\Firmology\Warehouse.cs" />
     <Compile Include="Data\Housing\Dwelling.cs" />
     <Compile Include="Data\Housing\HousingEnumerations.cs" />
     <Compile Include="Data\LabourForce\Job.cs" />
@@ -130,7 +140,6 @@
     <Compile Include="Data\Vehicle.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Data\Firmology\" />
     <Folder Include="VehicleTransaction\" />
   </ItemGroup>
   <ItemGroup>
