@@ -21,10 +21,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMG.Ilute.Data.Firmology.Contracts;
 
 namespace TMG.Ilute.Data.Firmology
 {
-    class BusinessEstablishment
+    public class BusinessEstablishment
     {
+        public List<CommodityProductionFacility> ProductionFacilities { get; private set; }
+
+        public List<BusinessServiceFacility> ServiceFacilities { get; private set; }
+
+        public LogisticsFacility LogisticsFacility { get; private set; }
+
+        public List<CommodityContract> CommodityContracts { get; private set; }
+
+        public List<BusinessServiceContract> BusinessServiceContracts { get; private set; }
+
+        public List<LogisticsServiceContract> LogisticsServiceContracts { get; private set; }
+
+        public BusinessEstablishment()
+        {
+            ProductionFacilities = new List<CommodityProductionFacility>();
+            ServiceFacilities = new List<BusinessServiceFacility>();
+            LogisticsFacility = null;
+            CommodityContracts = new List<CommodityContract>();
+            BusinessServiceContracts = new List<BusinessServiceContract>();
+            LogisticsServiceContracts = new List<LogisticsServiceContract>();
+        }
+
+
     }
 }

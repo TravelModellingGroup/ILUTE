@@ -24,7 +24,26 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Data.Firmology
 {
-    class Firm
+    public class Firm : IndexedObject
     {
+        public List<BusinessEstablishment> BusinessEstablishments { get; private set; }
+
+        public bool IsOpen { get; private set; }
+
+        public void CloseFirm()
+        {
+            IsOpen = false;
+        }
+
+        public Firm()
+        {
+            BusinessEstablishments = new List<BusinessEstablishment>();
+        }
+
+        public override void BeingRemoved()
+        {
+            CloseFirm();
+            BusinessEstablishments.Clear();
+        }
     }
 }

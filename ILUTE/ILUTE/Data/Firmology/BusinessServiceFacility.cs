@@ -24,7 +24,13 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Data.Firmology
 {
-    class BusinessServiceFacility
+    public class BusinessServiceFacility
     {
+        public BusinessEstablishment Establishment { get; private set; }
+
+        public BusinessServiceFacility(BusinessEstablishment establishment)
+        {
+            Establishment = establishment;
+        }
     }
 }

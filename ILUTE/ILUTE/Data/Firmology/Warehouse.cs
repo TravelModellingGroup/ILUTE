@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Data.Firmology
 {
-    class Warehouse
+    public class Warehouse
     {
     }
 }
