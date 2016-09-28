@@ -24,6 +24,9 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Data
 {
+    /// <summary>
+    /// Indexed Object is the base class for things that go into a Repository
+    /// </summary>
     public abstract class IndexedObject
     {
         /// <summary>

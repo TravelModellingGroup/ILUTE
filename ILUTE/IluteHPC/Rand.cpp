@@ -21,6 +21,7 @@ along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 #include "IluteHPC.h"
 extern "C"
 {
+	// Update process for the Mersenne Twister
 	ILUTEHPC_API void RandUpdateRandomVector(UINT32* pmt)
 	{
 		const int N = 624;

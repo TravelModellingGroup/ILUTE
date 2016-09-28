@@ -24,6 +24,9 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Data
 {
+    /// <summary>
+    /// Provides an abstraction for the value of money in a given year
+    /// </summary>
     public struct Money
     {
         /// <summary>

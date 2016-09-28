@@ -25,6 +25,9 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Model
 {
+    /// <summary>
+    /// Mersenne Twister Random Number Generator
+    /// </summary>
     public sealed class Rand
     {
         // Period parameters.

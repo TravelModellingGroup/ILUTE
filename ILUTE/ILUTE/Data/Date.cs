@@ -24,6 +24,9 @@ using System.Threading.Tasks;
 
 namespace TMG.Ilute.Data
 {
+    /// <summary>
+    /// Gives reference to a Year / Month level of precision
+    /// </summary>
     public struct Date
     {
         /// <summary>
