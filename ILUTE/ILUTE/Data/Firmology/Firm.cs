@@ -26,6 +26,8 @@ namespace TMG.Ilute.Data.Firmology
 {
     public class Firm : IndexedObject
     {
+
+        public Date CreationDate { get; private set; }
         public List<BusinessEstablishment> BusinessEstablishments { get; private set; }
 
         public bool IsOpen { get; private set; }
@@ -35,8 +37,9 @@ namespace TMG.Ilute.Data.Firmology
             IsOpen = false;
         }
 
-        public Firm()
+        public Firm(Date currentDate)
         {
+            CreationDate = currentDate;
             BusinessEstablishments = new List<BusinessEstablishment>();
         }
 
