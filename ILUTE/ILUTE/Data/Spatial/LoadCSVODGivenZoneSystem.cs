@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2016-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of ILUTE, a set of modules for XTMF.
 
@@ -47,12 +47,9 @@ namespace TMG.Ilute.Data.Spatial
         [RunParameter("Third Normalized", false, "Is the data stored in a third normalized form? (Origin,Destination,Value)")]
         public bool ThirdNormalized;
 
-        private SparseTwinIndex<float> Data;
+        private SparseTwinIndex<float> _data;
 
-        public SparseTwinIndex<float> GiveData()
-        {
-            return Data;
-        }
+        public SparseTwinIndex<float> GiveData() => _data;
 
         public void LoadData()
         {
@@ -66,7 +63,7 @@ namespace TMG.Ilute.Data.Spatial
             {
                 LoadSquareCSV(data);
             }
-            Data = data;
+            _data = data;
             Loaded = true;
         }
 
@@ -131,7 +128,7 @@ namespace TMG.Ilute.Data.Spatial
 
         public void UnloadData()
         {
-            Data = null;
+            _data = null;
             Loaded = false;
         }
     }

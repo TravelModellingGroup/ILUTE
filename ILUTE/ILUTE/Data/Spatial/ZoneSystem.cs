@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2016-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of ILUTE, a set of modules for XTMF.
 
@@ -35,36 +35,16 @@ namespace TMG.Ilute.Data.Spatial
         [SubModelInformation(Required = true, Description = "The CSV file (ZoneNumber,X,Y,Area)")]
         public FileLocation FileToLoad;
 
-        public bool Loaded
-        {
-            get;set;
-        }
+        public bool Loaded { get; set; }
+        
 
-        public string Name
-        {
-            get;set;
-        }
+        public string Name { get; set; }
 
-        public float Progress
-        {
-            get
-            {
-                return 0f;
-            }
-        }
+        public float Progress => 0f;
 
-        public Tuple<byte, byte, byte> ProgressColour
-        {
-            get
-            {
-                return null;
-            }
-        }
+        public Tuple<byte, byte, byte> ProgressColour => null;
 
-        public ZoneSystem GiveData()
-        {
-            return this;
-        }
+        public ZoneSystem GiveData() => this;
 
         public int[] ZoneNumber { get; private set; }
 

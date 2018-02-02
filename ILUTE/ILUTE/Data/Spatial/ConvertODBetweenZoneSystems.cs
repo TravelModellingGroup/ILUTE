@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2016-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of ILUTE, a set of modules for XTMF.
 
@@ -60,22 +60,16 @@ namespace TMG.Ilute.Data.Spatial
         [RunParameter("Aggregation", "Sum", typeof(Aggregations), "The aggregation to apply")]
         public Aggregations Aggregation;
 
-        public bool Loaded
-        {
-            get; set;
-        }
+        public bool Loaded { get; set; }
 
         public bool RuntimeValidation(ref string error)
         {
             return true;
         }
 
-        private SparseTwinIndex<float> Data;
+        private SparseTwinIndex<float> _data;
 
-        public SparseTwinIndex<float> GiveData()
-        {
-            return Data;
-        }
+        public SparseTwinIndex<float> GiveData() => _data;
 
         public void LoadData()
         {
@@ -94,7 +88,7 @@ namespace TMG.Ilute.Data.Spatial
                     ApplyAverage(map, flat, original);
                     break;
             }
-            Data = ret;
+            _data = ret;
             Loaded = true;
         }
 
@@ -237,17 +231,14 @@ namespace TMG.Ilute.Data.Spatial
             var map = new float[originalZones.Length * convertToZones.Length];
             using (var reader = new CsvReader(MapFile))
             {
-                int columns;
                 reader.LoadLine();
-                while (reader.LoadLine(out columns))
+                while (reader.LoadLine(out int columns))
                 {
                     if (columns >= 3)
                     {
-                        int origin, dest;
-                        float ratio;
-                        reader.Get(out origin, 0);
-                        reader.Get(out dest, 1);
-                        reader.Get(out ratio, 2);
+                        reader.Get(out int origin, 0);
+                        reader.Get(out int dest, 1);
+                        reader.Get(out float ratio, 2);
                         // convert the indexes into flat index lookups
                         origin = Array.BinarySearch(originalZones, origin);
                         dest = Array.BinarySearch(convertToZones, dest);
@@ -269,7 +260,7 @@ namespace TMG.Ilute.Data.Spatial
 
         public void UnloadData()
         {
-            Data = null;
+            _data = null;
             Loaded = false;
         }
     }

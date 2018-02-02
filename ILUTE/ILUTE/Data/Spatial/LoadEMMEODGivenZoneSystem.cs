@@ -45,12 +45,9 @@ namespace TMG.Ilute.Data.Spatial
         [SubModelInformation(Required = true, Description = "The file to load the data from ")]
         public FileLocation LoadFrom;
 
-        private SparseTwinIndex<float> Data;
+        private SparseTwinIndex<float> _data;
 
-        public SparseTwinIndex<float> GiveData()
-        {
-            return Data;
-        }
+        public SparseTwinIndex<float> GiveData() => _data;
 
         public void LoadData()
         {
@@ -67,7 +64,7 @@ namespace TMG.Ilute.Data.Spatial
                     srcIndex += flatData.Length;
                 }
             }, LoadFrom);
-            Data = data;
+            _data = data;
             Loaded = true;
         }
         
@@ -87,7 +84,7 @@ namespace TMG.Ilute.Data.Spatial
 
         public void UnloadData()
         {
-            Data = null;
+            _data = null;
             Loaded = false;
         }
     }

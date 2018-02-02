@@ -39,21 +39,21 @@ namespace TMG.Ilute.Data
         /// </summary>
         public int Month { get { return Months % 12; } }
 
-        private readonly int _Months;
+        private readonly int _months;
 
         /// <summary>
         /// The number of months since year 0.
         /// </summary>
-        public int Months { get { return _Months; } }
+        public int Months { get { return _months; } }
 
         public Date(int year, int month)
         {
-            _Months = year * 12 + month;
+            _months = year * 12 + month;
         }
 
         private Date(int months)
         {
-            _Months = months;
+            _months = months;
         }
 
         public static bool operator<(Date first, Date second)

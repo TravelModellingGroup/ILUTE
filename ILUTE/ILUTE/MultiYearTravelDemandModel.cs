@@ -39,7 +39,7 @@ namespace TMG.Ilute
 
         public string OutputBaseDirectory { get; set; }
 
-        private volatile bool _Exit = false;
+        private volatile bool _exit = false;
 
         [RunParameter("Start Year", 1986, "The first year of the simulation.")]
         public int StartYear;
@@ -49,14 +49,7 @@ namespace TMG.Ilute
 
         public float Progress { get; set; }
 
-
-        public Tuple<byte, byte, byte> ProgressColour
-        {
-            get
-            {
-                return new Tuple<byte, byte, byte>(50, 150, 50);
-            }
-        }
+        public Tuple<byte, byte, byte> ProgressColour => new Tuple<byte, byte, byte>(50, 150, 50);
 
         [SubModelInformation(Required = true, Description = "The zone system the model will use.")]
         public IZoneSystem ZoneSystem { get; set; }
@@ -67,7 +60,7 @@ namespace TMG.Ilute
 
         public bool ExitRequest()
         {
-            _Exit = true;
+            _exit = true;
             return true;
         }
 
@@ -95,51 +88,51 @@ namespace TMG.Ilute
             ZoneSystem.LoadData();
             for (int i = 0; i < PreRun.Length; i++)
             {
-                _Status = () => PreRun[i].ToString();
+                _status = () => PreRun[i].ToString();
                 PreRun[i].Start();
             }
             foreach (var model in RunYearly)
             {
-                _Status = () => model.ToString();
+                _status = () => model.ToString();
                 model.BeforeFirstYear(StartYear);
             }
-            for (int year = 0; year < NumberOfYears && !_Exit; year++)
+            for (int year = 0; year < NumberOfYears && !_exit; year++)
             {
-                for (int i = 0; i < RunYearly.Length && !_Exit; i++)
+                for (int i = 0; i < RunYearly.Length && !_exit; i++)
                 {
-                    _Status = () => RunYearly[i].ToString();
+                    _status = () => RunYearly[i].ToString();
                     RunYearly[i].BeforeYearlyExecute(StartYear + year);
                 }
-                for (int i = 0; i < RunYearly.Length && !_Exit; i++)
+                for (int i = 0; i < RunYearly.Length && !_exit; i++)
                 {
-                    _Status = () => (year + this.StartYear) + ": " + RunYearly[i].ToString();
+                    _status = () => (year + this.StartYear) + ": " + RunYearly[i].ToString();
                     Progress = (float)year / NumberOfYears + (1.0f / NumberOfYears) * ((float)i / RunYearly.Length);
                     RunYearly[i].Execute(StartYear + year);
                 }
-                for (int i = 0; i < RunYearly.Length && !_Exit; i++)
+                for (int i = 0; i < RunYearly.Length && !_exit; i++)
                 {
-                    _Status = () => RunYearly[i].ToString();
+                    _status = () => RunYearly[i].ToString();
                     RunYearly[i].AfterYearlyExecute(StartYear + year);
                 }
             }
             foreach (var model in RunYearly)
             {
-                _Status = () => model.ToString();
+                _status = () => model.ToString();
                 model.RunFinished(StartYear + NumberOfYears - 1);
             }
             for (int i = 0; i < PostRun.Length; i++)
             {
-                _Status = () => PostRun[i].ToString();
+                _status = () => PostRun[i].ToString();
                 PostRun[i].Start();
             }
             ZoneSystem.UnloadData();
         }
 
-        private Func<string> _Status;
+        private Func<string> _status;
 
         public override string ToString()
         {
-            var s = _Status;
+            var s = _status;
             if (s != null) return s();
             return base.ToString();
         }

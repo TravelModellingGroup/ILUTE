@@ -39,23 +39,23 @@ namespace TMG.Ilute.Model
         private const int MAX_RAND_INT = 0x7fffffff;
 
         // mag01[x] = x * MATRIX_A  for x=0,1
-        private uint[] mag01 = { 0x0U, MATRIX_A };
+        private uint[] _mag01 = { 0x0U, MATRIX_A };
 
-        private uint[] mt = new uint[N];
+        private uint[] _mt = new uint[N];
 
         // mti==N+1 means mt[N] is not initialized
         private int mti = N + 1;
 
         public Rand(uint seed)
         {
-            mt[0] = seed;
-            for (int i = 1; i < mt.Length; i++)
+            _mt[0] = seed;
+            for (int i = 1; i < _mt.Length; i++)
             {
                 // See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. 
                 // In the previous versions, MSBs of the seed affect   
                 // only MSBs of the array mt[].                        
-                mt[i] =
-                (uint)(1812433253U * (mt[i - 1] ^ (mt[i - 1] >> 30)) + i);   
+                _mt[i] =
+                (uint)(1812433253U * (_mt[i - 1] ^ (_mt[i - 1] >> 30)) + i);   
             }
         }
 
@@ -69,14 +69,14 @@ namespace TMG.Ilute.Model
                 /* generate N words at one time */
                 unsafe
                 {
-                    fixed (uint* pmt = mt)
+                    fixed (uint* pmt = _mt)
                     {
                         RandUpdateRandomVector(pmt);
                         mti = 0;
                     }
                 }
             }
-            return mt[mti++] * InvMaxUIntAsFloat;
+            return _mt[mti++] * InvMaxUIntAsFloat;
         }
 
         public float Take()
@@ -86,14 +86,14 @@ namespace TMG.Ilute.Model
                 /* generate N words at one time */
                 unsafe
                 {
-                    fixed (uint* pmt = mt)
+                    fixed (uint* pmt = _mt)
                     {
                         RandUpdateRandomVector(pmt);
                         mti = 0;
                     }
                 }
             }
-            return mt[mti++] * InvMaxUIntAsFloat;
+            return _mt[mti++] * InvMaxUIntAsFloat;
         }
 
         public double NextDouble()
@@ -112,14 +112,14 @@ namespace TMG.Ilute.Model
                 /* generate N words at one time */
                 unsafe
                 {
-                    fixed (uint* pmt = mt)
+                    fixed (uint* pmt = _mt)
                     {
                         RandUpdateRandomVector(pmt);
                         mti = 0;
                     }
                 }
             }
-            return mt[mti++];
+            return _mt[mti++];
         }
     }
 }
