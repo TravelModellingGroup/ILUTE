@@ -59,7 +59,7 @@ namespace TMG.Ilute.Model.Demographic.Validation
                 {
                     if(person.Family != family)
                     {
-                        throw new XTMFRuntimeException($"In {Name} we found a person {person.Id} in family {family.Id} that was not referencing that family!");
+                        throw new XTMFRuntimeException(this, $"In {Name} we found a person {person.Id} in family {family.Id} that was not referencing that family!");
                     }
                 }
             }

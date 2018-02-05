@@ -127,12 +127,11 @@ Household:
             var zoneSystem = Repository.GetRepository(ZoneSystem);
             using (var reader = new CsvReader(InitialHouseholdFile, true))
             {
-                int columns;
                 if (FilesContainHeaders)
                 {
                     reader.LoadLine();
                 }
-                while (reader.LoadLine(out columns))
+                while (reader.LoadLine(out int columns))
                 {
                     /*
                     int dwellingid, pumhid, ctcode, tts96, prov, urbru, cmapust, weight, hhinda, hhindb, hhpera, hhperb1, hhperb2, hhperd, hhpere,
@@ -146,14 +145,13 @@ Household:
                     */
                     if (columns > 39)
                     {
-                        int dwellingid, ctcode, hhcomp, dtype, tenur, rooms, value;
-                        reader.Get(out dwellingid, 0);
-                        reader.Get(out ctcode, 2);
-                        reader.Get(out hhcomp, 19);
-                        reader.Get(out dtype, 31);
-                        reader.Get(out tenur, 33);
-                        reader.Get(out rooms, 36);
-                        reader.Get(out value, 39);
+                        reader.Get(out int dwellingid, 0);
+                        reader.Get(out int ctcode, 2);
+                        reader.Get(out int hhcomp, 19);
+                        reader.Get(out int dtype, 31);
+                        reader.Get(out int tenur, 33);
+                        reader.Get(out int rooms, 36);
+                        reader.Get(out int value, 39);
                         Household h = new Household();
                         Dwelling d = new Dwelling();
                         householdRepo.AddNew(dwellingid, h);
@@ -215,25 +213,22 @@ Household:
             using (var hhldContext = householdRepo.GetMultiAccessContext())
             using (var reader = new CsvReader(InitialFamilyFile, true))
             {
-                int columns;
                 if (FilesContainHeaders)
                 {
                     reader.LoadLine();
                 }
-                while (reader.LoadLine(out columns))
+                while (reader.LoadLine(out int columns))
                 {
                     if (columns > 3)
                     {
-                        int familyId, dwellingId, ageM, ageF;
-                        reader.Get(out familyId, 0);
-                        reader.Get(out dwellingId, 2);
-                        reader.Get(out ageM, 14);
-                        reader.Get(out ageF, 17);
+                        reader.Get(out int familyId, 0);
+                        reader.Get(out int dwellingId, 2);
+                        reader.Get(out int ageM, 14);
+                        reader.Get(out int ageF, 17);
                         // if the family is being used, update the index
-                        Family family;
-                        if (!familyContext.TryGet(familyId, out family))
+                        if (!familyContext.TryGet(familyId, out Family family))
                         {
-                            throw new XTMFRuntimeException($"In '{Name}' we tried to load family data for a family that does not exist!");
+                            throw new XTMFRuntimeException(this, $"In '{Name}' we tried to load family data for a family that does not exist!");
                         }
                         // if there is no dwelling we can't initialize them
                         if (dwellingId < 0)
@@ -387,35 +382,32 @@ Household:
                 80  govtip,	retirp,	otincp,	hmainp,	tenurp,	rcondp,	valuep, room,	id;
                 */
                 // there is no header at the moment so we don't need to burn a line
-                int columns;
                 if (FilesContainHeaders)
                 {
                     reader.LoadLine();
                 }
-                while (reader.LoadLine(out columns))
+                while (reader.LoadLine(out int columns))
                 {
                     if (columns >= 89)
                     {
-                        int personid, familyid, dwellingid, hhstat, cfstat, agep, sexp, marstp, lfact, occ81p, ind80p, totincp, hlosp;
-                        int dgmfs, psuv, psot, trnuc, dgree;
-                        reader.Get(out personid, 0);
-                        reader.Get(out familyid, 2);
-                        reader.Get(out dwellingid, 3);
-                        reader.Get(out hhstat, 13);
-                        reader.Get(out cfstat, 16);
-                        reader.Get(out agep, 20);
-                        reader.Get(out sexp, 21);
-                        reader.Get(out marstp, 22);
-                        reader.Get(out lfact, 26);
-                        reader.Get(out occ81p, 32);
-                        reader.Get(out ind80p, 34);
-                        reader.Get(out totincp, 71);
-                        reader.Get(out hlosp, 37);
-                        reader.Get(out dgmfs, 43);
-                        reader.Get(out psuv, 39);
-                        reader.Get(out psot, 40);
-                        reader.Get(out trnuc, 41);
-                        reader.Get(out dgree, 42);
+                        reader.Get(out int personid, 0);
+                        reader.Get(out int familyid, 2);
+                        reader.Get(out int dwellingid, 3);
+                        reader.Get(out int hhstat, 13);
+                        reader.Get(out int cfstat, 16);
+                        reader.Get(out int agep, 20);
+                        reader.Get(out int sexp, 21);
+                        reader.Get(out int marstp, 22);
+                        reader.Get(out int lfact, 26);
+                        reader.Get(out int occ81p, 32);
+                        reader.Get(out int ind80p, 34);
+                        reader.Get(out int totincp, 71);
+                        reader.Get(out int hlosp, 37);
+                        reader.Get(out int dgmfs, 43);
+                        reader.Get(out int psuv, 39);
+                        reader.Get(out int psot, 40);
+                        reader.Get(out int trnuc, 41);
+                        reader.Get(out int dgree, 42);
 
                         Family personsFamily;
                         // if they are living alone create a new family for them

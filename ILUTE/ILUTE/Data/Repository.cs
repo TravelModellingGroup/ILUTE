@@ -209,8 +209,7 @@ namespace TMG.Ilute.Data
             // after the object is ready to be removed, do so
             _dataLock.EnterWriteLock();
             Thread.MemoryBarrier();
-            T element;
-            if (!_data.TryGetValue(index, out element))
+            if (!_data.TryGetValue(index, out T element))
             {
                 throw new XTMFRuntimeException(this, $"In {Name} we were unable to find data at index {index} in order to retrieve it!");
             }

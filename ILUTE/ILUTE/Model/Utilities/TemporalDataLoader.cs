@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2016-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of ILUTE, a set of modules for XTMF.
 
@@ -34,7 +34,7 @@ namespace TMG.Ilute.Model.Utilities
         [RootModule]
         public MultiYearTravelDemandModel Root;
 
-        public SparseArray<float> Data;
+        private SparseArray<float> _data;
 
         [SubModelInformation(Required = true, Description = "The location to load the temporal data from.")]
         public FileLocation LoadFrom;
@@ -58,7 +58,7 @@ namespace TMG.Ilute.Model.Utilities
 
         public SparseArray<float> GiveData()
         {
-            return Data;
+            return _data;
         }
 
         private SparseArray<float> CreateBlankSparseArrayOfMonthData()
@@ -98,7 +98,7 @@ namespace TMG.Ilute.Model.Utilities
                         }
                         if (time < startMonth || time >= endMonth)
                         {
-                            throw new XTMFRuntimeException($"While loading data in '{Name}' we came across a month = '{time}' that isn't in the model's time-frame.");
+                            throw new XTMFRuntimeException(this, $"While loading data in '{Name}' we came across a month = '{time}' that isn't in the model's time-frame.");
                         }
                         if (year)
                         {
@@ -115,13 +115,13 @@ namespace TMG.Ilute.Model.Utilities
                     }
                 }
             }
-            Data = data;
+            _data = data;
             Loaded = true;
         }
 
         public void UnloadData()
         {
-            Data = null;
+            _data = null;
             Loaded = false;
         }
     }

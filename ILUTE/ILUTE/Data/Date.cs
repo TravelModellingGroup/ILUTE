@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2016-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of ILUTE, a set of modules for XTMF.
 
@@ -58,28 +58,12 @@ namespace TMG.Ilute.Data
 
         public static bool operator<(Date first, Date second)
         {
-            if(first.Year < second.Year)
-            {
-                return true;
-            }
-            else if(first.Year == second.Year && first.Month < second.Month)
-            {
-                return true;
-            }
-            return false;
+            return first.Year < second.Year || first.Year == second.Year && first.Month < second.Month;
         }
 
         public static bool operator <=(Date first, Date second)
         {
-            if (first.Year < second.Year)
-            {
-                return true;
-            }
-            else if (first.Year == second.Year && first.Month <= second.Month)
-            {
-                return true;
-            }
-            return false;
+            return first.Year < second.Year || first.Year == second.Year && first.Month <= second.Month;
         }
 
         public static bool operator >(Date first, Date second)
@@ -114,9 +98,8 @@ namespace TMG.Ilute.Data
 
         public override bool Equals(object obj)
         {
-            if(obj is Date)
+            if (obj is Date other)
             {
-                var other = (Date)obj;
                 return this == other;
             }
             return base.Equals(obj);

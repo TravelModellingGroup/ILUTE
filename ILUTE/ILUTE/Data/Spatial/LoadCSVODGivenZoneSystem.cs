@@ -72,17 +72,15 @@ namespace TMG.Ilute.Data.Spatial
             var flat = data.GetFlatData();
             using (var reader = new CsvReader(LoadFrom, true))
             {
-                int columns;
                 reader.LoadLine();
                 var o = 0;
-                while (reader.LoadLine(out columns))
+                while (reader.LoadLine(out int columns))
                 {
                     if (columns >= flat.Length + 1)
                     {
                         for (int d = 0; d < flat.Length; d++)
                         {
-                            float val;
-                            reader.Get(out val, d + 1);
+                            reader.Get(out float val, d + 1);
                             flat[o][d] = val;
                         }
                     }
@@ -95,17 +93,14 @@ namespace TMG.Ilute.Data.Spatial
         {
             using (var reader = new CsvReader(LoadFrom, true))
             {
-                int columns;
                 reader.LoadLine();
-                while (reader.LoadLine(out columns))
+                while (reader.LoadLine(out int columns))
                 {
                     if (columns >= 3)
                     {
-                        int o, d;
-                        float val;
-                        reader.Get(out o, 0);
-                        reader.Get(out d, 1);
-                        reader.Get(out val, 2);
+                        reader.Get(out int o, 0);
+                        reader.Get(out int d, 1);
+                        reader.Get(out float val, 2);
                         data[o, d] = val;
                     }
                 }

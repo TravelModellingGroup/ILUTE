@@ -94,8 +94,7 @@ namespace TMG.Ilute.Data.Spatial
             {
                 using (var reader = new CsvReader(FileToLoad, true))
                 {
-                    int columns;
-                    reader.LoadLine(out columns);
+                    reader.LoadLine(out int columns);
                     while (reader.LoadLine(out columns))
                     {
                         if (columns >= 4)

@@ -138,11 +138,13 @@ namespace TMG.Ilute.Model.Demographic
                 // process each person having a child
                 foreach (var mother in havingAChild)
                {
-                    // create the child
-                    var baby = new Person();
-                   baby.Sex = rand.Take() < ProbabilityOfBabyBeingFemale ? Sex.Female : Sex.Male;
-                   baby.Mother = mother;
-                   baby.Father = mother.Spouse;
+                   // create the child
+                   var baby = new Person
+                   {
+                       Sex = rand.Take() < ProbabilityOfBabyBeingFemale ? Sex.Female : Sex.Male,
+                       Mother = mother,
+                       Father = mother.Spouse
+                   };
                    persons.AddNew(baby);
                    var originalFamily = mother.Family;
                    baby.Family = originalFamily;

@@ -27,7 +27,7 @@ namespace TMG.Ilute.Data.Demographics.Education
     /// <summary>
     /// This class holds the data for a person's educational status
     /// </summary>
-    public class PersonalEducation : IndexedObject
+    public sealed class PersonalEducation : IndexedObject
     {
         public int Person { get; set; }
 

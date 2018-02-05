@@ -114,6 +114,7 @@
     <Compile Include="Model\Demographic\Validation\GatherBirthsByAge.cs" />
     <Compile Include="Model\Demographic\Validation\GatherMarriageStatusByYear.cs" />
     <Compile Include="Model\Demographic\Validation\GatherPopulationByAges.cs" />
+    <Compile Include="Model\Housing\HousingMarket.cs" />
     <Compile Include="Model\Housing\Validation\CountDwellingsByZone.cs" />
     <Compile Include="Model\Pipes\YearlyPipe.cs" />
     <Compile Include="Model\Rand.cs" />

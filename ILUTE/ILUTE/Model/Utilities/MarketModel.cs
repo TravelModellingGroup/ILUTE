@@ -64,21 +64,9 @@ namespace TMG.Ilute.Model.Utilities
             get; set;
         }
 
-        public float Progress
-        {
-            get
-            {
-                return 0f;
-            }
-        }
+        public float Progress => 0f;
 
-        public Tuple<byte, byte, byte> ProgressColour
-        {
-            get
-            {
-                return new Tuple<byte, byte, byte>(50, 150, 50);
-            }
-        }
+        public Tuple<byte, byte, byte> ProgressColour =>  new Tuple<byte, byte, byte>(50, 150, 50);
 
         protected abstract List<Buyer> GetActiveBuyers(int year, int month, Rand random);
 
@@ -115,13 +103,15 @@ namespace TMG.Ilute.Model.Utilities
             var sets = new List<ChoiceSet>(sellers.Count);
             if (ChoiceSetSize > buyers.Count)
             {
-                throw new XTMFRuntimeException($"In '{Name}' there were insufficient buyers in the market for the choice set size!");
+                throw new XTMFRuntimeException(this, $"In '{Name}' there were insufficient buyers in the market for the choice set size!");
             }
             foreach (var seller in sellers)
             {
-                ChoiceSet set = new ChoiceSet();
-                set.Seller = seller;
-                set.PotentialBuyers = new BuyerOffer[ChoiceSetSize];
+                ChoiceSet set = new ChoiceSet
+                {
+                    Seller = seller,
+                    PotentialBuyers = new BuyerOffer[ChoiceSetSize]
+                };
                 for (int i = 0; i < set.PotentialBuyers.Length; i++)
                 {
                     var nextBuyer = buyers[(int)(random.NextFloat() * buyers.Count)];
