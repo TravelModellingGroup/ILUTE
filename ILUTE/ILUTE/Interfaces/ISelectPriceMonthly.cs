@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+    Copyright 2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of ILUTE, a set of modules for XTMF.
 
@@ -22,27 +22,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TMG.Ilute.Data
+namespace TMG.Ilute
 {
-    /// <summary>
-    /// Indexed Object is the base class for things that go into a Repository
-    /// </summary>
-    public abstract class IndexedObject
+    public interface ISelectPriceMonthly<Buyer,Seller> : IExecuteMonthly
     {
-        /// <summary>
-        /// The unique index in the data source for this type
-        /// of object
-        /// </summary>
-        public long Id { get; set; }
-
-        /// <summary>
-        /// This method will be invoked when this object
-        /// is being removed from the model.  All cleanup
-        /// should occur here.
-        /// </summary>
-        public virtual void BeingRemoved()
-        {
-            // the default is to do nothing
-        }
+        float GetPrice(Buyer buyer, Seller seller);
     }
 }

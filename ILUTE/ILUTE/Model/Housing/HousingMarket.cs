@@ -17,49 +17,77 @@
     along with XTMF.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TMG.Ilute.Data.Demographics;
 using TMG.Ilute.Data.Housing;
 using TMG.Ilute.Model.Utilities;
+using XTMF;
 
 namespace TMG.Ilute.Model.Housing
 {
     public sealed class HousingMarket : MarketModel<Household, Dwelling>, IExecuteMonthly, ICSVYearlySummary
     {
-        private float _dwellingsSold = 0;
-        private float _householdRemaining = 0;
-        private float _dwellingsRemaining = 0;
-        public List<string> Headers => new List<string>() { "DwellingsSold,HouseholdsRemaining,DwellingsReamining" };
 
-        public List<float> YearlyResults => new List<float>() { _dwellingsSold, _householdRemaining, _dwellingsRemaining };
+        [RunParameter("Random Seed", 12345, "The random seed to use for this model.")]
+        public int RandomSeed;
+
+        [SubModelInformation(Required = true, Description = "The model to select the price a household would spend.")]
+        public ISelectPriceMonthly<Household, SellerValues> Bid;
+
+        private long _boughtDwellings;
+        private double _totalSalePrice;
+
+        private ConcurrentDictionary<long, Household> _remainingHouseholds = new ConcurrentDictionary<long, Household>();
+        private ConcurrentDictionary<long, Dwelling> _remainingDwellings = new ConcurrentDictionary<long, Dwelling>();
+
+        public List<string> Headers => new List<string>() { "DwellingsSold", "HouseholdsRemaining", "DwellingsReamining", "AverageSalePrice" };
+
+        public List<float> YearlyResults => new List<float>()
+        {
+            _boughtDwellings,
+            _remainingHouseholds.Count,
+            _remainingDwellings.Count,
+            (float)(_totalSalePrice / _boughtDwellings)
+        };
 
         public void AfterMonthlyExecute(int currentYear, int month)
         {
+            Bid.AfterMonthlyExecute(currentYear, month);
         }
 
         public void AfterYearlyExecute(int currentYear)
         {
-            
+            Bid.AfterYearlyExecute(currentYear);
         }
 
         public void BeforeFirstYear(int firstYear)
         {
+            Bid.BeforeFirstYear(firstYear);
         }
 
         public void BeforeMonthlyExecute(int currentYear, int month)
         {
+            Bid.BeforeMonthlyExecute(currentYear, month);
         }
 
         public void BeforeYearlyExecute(int currentYear)
         {
+            Bid.BeforeYearlyExecute(currentYear);
+            // cleanup the accumulators for statistics
+            _boughtDwellings = 0;
+            _totalSalePrice = 0;
         }
 
         public void Execute(int currentYear, int month)
         {
-            
+            // create the random seed for this execution of the housing market and start
+            var r = new Rand((uint)(currentYear * RandomSeed + month));
+            Execute(currentYear, month, r);
         }
 
         public void RunFinished(int finalYear)
@@ -68,18 +96,28 @@ namespace TMG.Ilute.Model.Housing
 
         protected override List<Household> GetActiveBuyers(int year, int month, Rand random)
         {
+            return new List<Household>();
         }
 
         protected override List<SellerValues> GetActiveSellers(int year, int month, Rand random)
         {
+            return new List<SellerValues>();
         }
 
         protected override float GetOffer(SellerValues seller, Household nextBuyer, int year, int month)
         {
+            return Bid.GetPrice(nextBuyer, seller);
         }
 
         protected override void ResolveSelection(Dwelling seller, Household buyer)
         {
+            var sellingHousehold = seller.Household;
+            
+            buyer.Dwelling = seller;
+            // remove the currently selected pairing from the remaining
+            Interlocked.Increment(ref _boughtDwellings);
+            _remainingDwellings.TryRemove(seller.Id, out seller);
+            _remainingHouseholds.TryRemove(buyer.Id, out buyer);
         }
     }
 }

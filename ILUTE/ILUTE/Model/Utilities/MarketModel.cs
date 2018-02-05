@@ -68,10 +68,32 @@ namespace TMG.Ilute.Model.Utilities
 
         public Tuple<byte, byte, byte> ProgressColour =>  new Tuple<byte, byte, byte>(50, 150, 50);
 
+        /// <summary>
+        /// Provide a list of buyers for the current time period
+        /// </summary>
+        /// <param name="year">The current year</param>
+        /// <param name="month">The current month</param>
+        /// <param name="random">A random number generator to use (1 thread for this generator only)</param>
+        /// <returns>The list of buyers for the market selection cycle.</returns>
         protected abstract List<Buyer> GetActiveBuyers(int year, int month, Rand random);
 
+        /// <summary>
+        /// Provide a list of seller data for the current time period
+        /// </summary>
+        /// <param name="year">The current year</param>
+        /// <param name="month">The current month</param>
+        /// <param name="random">A random number generator to use (1 thread for this generator only)</param>
+        /// <returns>Provides a list of sellers and market selection attributes.</returns>
         protected abstract List<SellerValues> GetActiveSellers(int year, int month, Rand random);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="seller">The seller of the item</param>
+        /// <param name="nextBuyer">The object buying the sold item.</param>
+        /// <param name="year">The current year</param>
+        /// <param name="month">The current month</param>
+        /// <returns></returns>
         protected abstract float GetOffer(SellerValues seller, Buyer nextBuyer, int year, int month);
 
         protected abstract void ResolveSelection(Seller seller, Buyer buyer);

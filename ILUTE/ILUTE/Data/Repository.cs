@@ -37,9 +37,9 @@ namespace TMG.Ilute.Data
         /// <summary>
         /// Call this to let dependences know that
         /// </summary>
-        internal abstract void MakeNew(int index);
+        internal abstract void MakeNew(long index);
 
-        internal abstract void CascadeRemove(int index);
+        internal abstract void CascadeRemove(long index);
 
         /// <summary>
         /// Get a copy of the repository from the data source loading it if necessary
@@ -115,14 +115,14 @@ namespace TMG.Ilute.Data
         /// <summary>
         /// The data storage, get the ListLock before accessing
         /// </summary>
-        private Dictionary<int, T> _data = new Dictionary<int, T>();
+        private Dictionary<long, T> _data = new Dictionary<long, T>();
 
         /// <summary>
         /// Add a new entry
         /// </summary>
         /// <param name="data">The information to add to the repository</param>
         /// <returns>The new index assigned for this element</returns>
-        public int AddNew(int index, T data)
+        public long AddNew(long index, T data)
         {
             _dataLock.EnterWriteLock();
             Thread.MemoryBarrier();
@@ -139,11 +139,11 @@ namespace TMG.Ilute.Data
             return index;
         }
 
-        public int AddNew(T data)
+        public long AddNew(T data)
         {
             _dataLock.EnterWriteLock();
             Thread.MemoryBarrier();
-            int index = Interlocked.Increment(ref _highest) - 1;
+            long index = Interlocked.Increment(ref _highest) - 1;
             data.Id = index;
             _data.Add(index, data);
             Thread.MemoryBarrier();
@@ -155,14 +155,15 @@ namespace TMG.Ilute.Data
             return index;
         }
 
-        private volatile int _highest = 0;
+        // Accessing this must be done inside of a memory fence!
+        private long _highest = 0;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="data"></param>
         /// <param name="index"></param>
-        public void SetByID(T data, int index)
+        public void SetByID(T data, long index)
         {
             _dataLock.EnterWriteLock();
             Thread.MemoryBarrier();
@@ -174,7 +175,7 @@ namespace TMG.Ilute.Data
         /// <summary>
         /// Generate a new entry for the given position
         /// </summary>
-        sealed override internal void MakeNew(int index)
+        sealed override internal void MakeNew(long index)
         {
             _dataLock.EnterWriteLock();
             Thread.MemoryBarrier();
@@ -198,13 +199,13 @@ namespace TMG.Ilute.Data
         /// Remove the given index from the repository
         /// </summary>
         /// <param name="index">The index to remove</param>
-        public void Remove(int index) => CascadeRemove(index);
+        public void Remove(long index) => CascadeRemove(index);
 
         /// <summary>
         /// Delete the given index and all dependent repositories' index as well
         /// </summary>
         /// <param name="index">The index to delete</param>
-        internal sealed override void CascadeRemove(int index)
+        internal sealed override void CascadeRemove(long index)
         {
             // after the object is ready to be removed, do so
             _dataLock.EnterWriteLock();
@@ -231,7 +232,7 @@ namespace TMG.Ilute.Data
         /// </summary>
         /// <param name="id">The ID to look up</param>
         /// <returns>The data at the given address</returns>
-        public T GetByID(int id)
+        public T GetByID(long id)
         {
             T ret = null;
             _dataLock.EnterReadLock();
@@ -260,7 +261,7 @@ namespace TMG.Ilute.Data
         /// <param name="id">The index of the data</param>
         /// <param name="data">The data to access</param>
         /// <returns>True if the data was recalled, false otherwise.</returns>
-        public bool TryGet(int id, out T data)
+        public bool TryGet(long id, out T data)
         {
             bool ret;
             _dataLock.EnterReadLock();
@@ -288,7 +289,7 @@ namespace TMG.Ilute.Data
         /// </summary>
         /// <param name="index">The index to work with</param>
         /// <returns>The value at the given index</returns>
-        public T this[int index]
+        public T this[long index]
         {
             get => GetByID(index);
             set => SetByID(value, index);
@@ -298,7 +299,7 @@ namespace TMG.Ilute.Data
 
         public struct RepositoryEnumerator : IEnumerator<T>
         {
-            private Dictionary<int, T>.Enumerator LocalEnumerator;
+            private Dictionary<long, T>.Enumerator LocalEnumerator;
             private readonly Repository<T> Repo;
             private volatile bool IsDisposed;
 
@@ -335,7 +336,7 @@ namespace TMG.Ilute.Data
         public struct MultipleAccessContext : IDisposable
         {
             private readonly Repository<T> _repo;
-            private readonly Dictionary<int, T> _data;
+            private readonly Dictionary<long, T> _data;
             private volatile bool _isDisposed;
             private readonly int _count;
 
@@ -349,23 +350,23 @@ namespace TMG.Ilute.Data
                 Thread.MemoryBarrier();
             }
 
-            public bool TryGet(int index, out T data)
+            public bool TryGet(long index, out T data)
             {
                 return _data.TryGetValue(index, out data);
             }
 
-            public T this[int i]
+            public T this[long i]
             {
                 get => _data[i];
                 set => _data[i] = value;
             }
 
-            public static implicit operator List<int>(MultipleAccessContext context)
+            public static implicit operator List<long>(MultipleAccessContext context)
             {
                 return context.GetKeys();
             }
 
-            public List<int> GetKeys()
+            public List<long> GetKeys()
             {
                 return _data.Keys.ToList();
             }
