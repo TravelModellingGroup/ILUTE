@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TMG.Ilute.Data;
 using TMG.Ilute.Data.Demographics;
 using TMG.Ilute.Data.Housing;
 using TMG.Ilute.Model.Utilities;
@@ -32,12 +33,17 @@ namespace TMG.Ilute.Model.Housing
 {
     public sealed class HousingMarket : MarketModel<Household, Dwelling>, IExecuteMonthly, ICSVYearlySummary
     {
-
         [RunParameter("Random Seed", 12345, "The random seed to use for this model.")]
         public int RandomSeed;
 
         [SubModelInformation(Required = true, Description = "The model to select the price a household would spend.")]
         public ISelectPriceMonthly<Household, SellerValues> Bid;
+
+        [SubModelInformation(Required = true, Description = "The model to predict the minimum price allowed for a sale.")]
+        public ISelectPriceMonthly<Dwelling, SellerValues> MinimumPrices;
+
+        [SubModelInformation(Required = true, Description = "A source of dwellings in the model.")]
+        public IDataSource<Repository<Dwelling>> DwellingRepository;
 
         private long _boughtDwellings;
         private double _totalSalePrice;
@@ -101,7 +107,24 @@ namespace TMG.Ilute.Model.Housing
 
         protected override List<SellerValues> GetActiveSellers(int year, int month, Rand random)
         {
-            return new List<SellerValues>();
+            var activeSellers = (from dwelling in Repository.GetRepository(DwellingRepository).AsParallel().AsOrdered()
+                    where dwelling.Household == null
+                    select AssignMinimumPrices(new SellerValues()
+                    {
+                        Unit = dwelling
+                    })).ToList();
+            Parallel.For(0, activeSellers.Count, (int i) =>
+            {
+                var dwelling = activeSellers[i].Unit;
+                
+            });
+            return activeSellers;
+        }
+
+        private SellerValues AssignMinimumPrices(SellerValues sellerValues)
+        {
+            //TODO: We should actually call a model to assign both a minimum price and an asking price here.
+            return sellerValues;
         }
 
         protected override float GetOffer(SellerValues seller, Household nextBuyer, int year, int month)

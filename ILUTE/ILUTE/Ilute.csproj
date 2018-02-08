@@ -99,6 +99,7 @@
     <Compile Include="ExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteMonthly.cs" />
     <Compile Include="Interfaces\IExecuteYearly.cs" />
+    <Compile Include="Interfaces\IMarketSeller.cs" />
     <Compile Include="Interfaces\ISelectPriceMonthly.cs" />
     <Compile Include="Model\Demographic\Divorce.cs" />
     <Compile Include="Model\Demographic\Immigration.cs" />
