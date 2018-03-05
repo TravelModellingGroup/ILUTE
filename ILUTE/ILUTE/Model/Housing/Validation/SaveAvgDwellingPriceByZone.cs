@@ -38,29 +38,44 @@ namespace TMG.Ilute.Model.Housing.Validation
         public void BeforeFirstYear(int firstYear)
         {
             _writer = new StreamWriter(SaveTo);
-            _writer.WriteLine("Year,Zone,NumberOfDwellings,AvgPrice,MinPrice,MaxPrice");
+            _writer.WriteLine("Year,Zone,NumberOfDwellings,AvgPrice,MedianPrice,MinPrice,MaxPrice");
         }
 
         public void BeforeYearlyExecute(int currentYear)
         {
         }
 
+        private float Median(IGrouping<int, Dwelling> grouping, Func<Dwelling, float> func)
+        {
+            var values = grouping.Select(d => func(d)).ToList();
+            values.Sort();
+            var countMinusOne = values.Count - 1;
+            if (values.Count == 0)
+            {
+                return 0f;
+            }
+            return (values.Count & 1) == 0 ?
+                  (values[countMinusOne / 2] + values[1 + (countMinusOne / 2)]) / 2.0f
+                : values[values.Count / 2];
+        }
+
         public void Execute(int currentYear)
         {
             var currencyManager = Repository.GetRepository(CurrencyManager);
-            foreach(var zoneData in from dwelling in Repository.GetRepository(Dwellings)
-                                    group dwelling by dwelling.Zone into g
-                                    orderby g.Key ascending
-                                    select new
-                                    {
-                                        Zone = g.Key,
-                                        AvgPrice = g.Average(d => currencyManager.ConvertToYear(d.Value, new Date(currentYear, 0)).Amount),
-                                        NumberOfDwellings = g.Count(),
-                                        MinPrice = g.Min(d => currencyManager.ConvertToYear(d.Value, new Date(currentYear, 0)).Amount),
-                                        MaxPrice = g.Max(d => currencyManager.ConvertToYear(d.Value, new Date(currentYear, 0)).Amount)
-                                    })
+            foreach (var zoneData in from dwelling in Repository.GetRepository(Dwellings)
+                                     group dwelling by dwelling.Zone into g
+                                     orderby g.Key ascending
+                                     select new
+                                     {
+                                         Zone = g.Key,
+                                         AvgPrice = g.Average(d => currencyManager.ConvertToYear(d.Value, new Date(currentYear, 0)).Amount),
+                                         MedianPrice = Median(g, d => currencyManager.ConvertToYear(d.Value, new Date(currentYear, 0)).Amount),
+                                         NumberOfDwellings = g.Count(),
+                                         MinPrice = g.Min(d => currencyManager.ConvertToYear(d.Value, new Date(currentYear, 0)).Amount),
+                                         MaxPrice = g.Max(d => currencyManager.ConvertToYear(d.Value, new Date(currentYear, 0)).Amount)
+                                     })
             {
-                _writer.WriteLine($"{currentYear},{zoneData.Zone},{zoneData.NumberOfDwellings},{zoneData.AvgPrice},{zoneData.MinPrice},{zoneData.MaxPrice}");
+                _writer.WriteLine($"{currentYear},{zoneData.Zone},{zoneData.NumberOfDwellings},{zoneData.AvgPrice},{zoneData.MedianPrice},{zoneData.MinPrice},{zoneData.MaxPrice}");
             }
         }
 
@@ -85,10 +100,10 @@ namespace TMG.Ilute.Model.Housing.Validation
             }
         }
 
-         ~SaveAvgDwellingPriceByZone()
+        ~SaveAvgDwellingPriceByZone()
         {
-           Dispose(false);
-         }
+            Dispose(false);
+        }
 
         // This code added to correctly implement the disposable pattern.
         public void Dispose()
