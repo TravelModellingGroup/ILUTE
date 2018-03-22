@@ -59,24 +59,12 @@ namespace TMG.Ilute.Model
             }
         }
 
-        private const float InvMaxUIntAsFloat = 1.0f / uint.MaxValue;
-        private const double InvMaxUIntAsDouble = 1.0 / uint.MaxValue;
+        private const float InvMaxUIntAsFloat = (1.0f / uint.MaxValue);
+        private const double InvMaxUIntAsDouble = (1.0 / uint.MaxValue);
 
         public float NextFloat()
         {
-            if (mti >= N)
-            {
-                /* generate N words at one time */
-                unsafe
-                {
-                    fixed (uint* pmt = _mt)
-                    {
-                        RandUpdateRandomVector(pmt);
-                        mti = 0;
-                    }
-                }
-            }
-            return _mt[mti++] * InvMaxUIntAsFloat;
+            return Take();
         }
 
         public float Take()
@@ -93,7 +81,7 @@ namespace TMG.Ilute.Model
                     }
                 }
             }
-            return _mt[mti++] * InvMaxUIntAsFloat;
+            return Math.Min(_mt[mti++] * InvMaxUIntAsFloat, 0.9999999f);
         }
 
         public double NextDouble()

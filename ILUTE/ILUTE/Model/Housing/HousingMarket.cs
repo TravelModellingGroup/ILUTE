@@ -31,6 +31,7 @@ using XTMF;
 
 namespace TMG.Ilute.Model.Housing
 {
+    /*
     public sealed class HousingMarket : MarketModel<Household, Dwelling>, IExecuteMonthly, ICSVYearlySummary
     {
         [RunParameter("Random Seed", 12345, "The random seed to use for this model.")]
@@ -143,4 +144,5 @@ namespace TMG.Ilute.Model.Housing
             _remainingHouseholds.TryRemove(buyer.Id, out buyer);
         }
     }
+    */
 }
