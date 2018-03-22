@@ -53,7 +53,7 @@ namespace TMG.Ilute.Data.Spatial
         {
             var zoneSystem = LoadZoneSystem(ZoneSystem);
             var data = SparseTwinIndex<float>.CreateSquareTwinIndex(zoneSystem, zoneSystem);
-            TMG.Functions.BinaryHelpers.ExecuteReader((reader) =>
+            TMG.Functions.BinaryHelpers.ExecuteReader(this, (reader) =>
             {
                 var matrix = new Emme.EmmeMatrix(reader);
                 var flatData = data.GetFlatData();
