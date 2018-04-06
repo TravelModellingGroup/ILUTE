@@ -238,18 +238,18 @@ namespace TMG.Ilute.Model.Demographic
             return _males;
         }
 
-        protected override List<List<Person>> GetSellers(Rand random)
+        protected override List<List<SellerValue>> GetSellers(Rand random)
         {
-            var ret = new List<Person>(_females.Count);
+            var ret = new List<SellerValue>(_females.Count);
             for (int i = 0; i < _females.Count; i++)
             {
                 //ret.Add(new SellerValues() { Unit = _females[i], MinimumPrice = 0.0f, AskingPrice = 0.0f });
-                ret.Add(_females[i]);
+                ret.Add(new SellerValue(_females[i], 0f, 0f));
             }
-            return new List<List<Person>>() { ret };
+            return new List<List<SellerValue>>() { ret };
         }
 
-        protected override void ResolveSale(Person buyer, Person seller)
+        protected override void ResolveSale(Person buyer, Person seller, float amount)
         {
             Marry(buyer, seller, _familyRepository);
         }
@@ -257,7 +257,7 @@ namespace TMG.Ilute.Model.Demographic
         [RunParameter("Choice Set", 10, "The number of people to look at when trying to find a partner.")]
         public int ChoiceSetSize;
 
-        protected override List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<Person>> sellers)
+        protected override List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<SellerValue>> sellers)
         {
             // Just select some people at random
             var onlyList = sellers[0];

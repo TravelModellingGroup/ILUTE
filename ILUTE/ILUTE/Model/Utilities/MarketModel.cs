@@ -34,6 +34,20 @@ namespace TMG.Ilute.Model.Utilities
         [RunParameter("MaxIterations", 20, "The maximum number of market clearing iterations to perform.")]
         public int MaxIterations;
 
+        public struct SellerValue
+        {
+            internal readonly Seller Unit;
+            internal readonly float AskingPrice;
+            internal readonly float MinimumPrice;
+
+            public SellerValue(Seller seller, float askingPrice, float minimumPrice)
+            {
+                Unit = seller;
+                AskingPrice = askingPrice;
+                MinimumPrice = minimumPrice;
+            }
+        }
+
         protected void Execute(Rand random, int year, int month)
         {
             /*
@@ -53,7 +67,7 @@ namespace TMG.Ilute.Model.Utilities
             var choiceSets = BuildChoiceSets(random, buyers, sellers);
             for (int iteration = 0; iteration < MaxIterations; ++iteration)
             {
-                var successes = buyers.Select(buyer => new List<(int typeIndex, int sellerIndex, float bid)>()).ToArray();
+                var successes = buyers.Select(buyer => new List<(int typeIndex, int sellerIndex, float ammount)>()).ToArray();
                 // Get all of the best buyers
                 for (int sellerType = 0; sellerType < choiceSets.Count; ++sellerType)
                 {
@@ -67,19 +81,20 @@ namespace TMG.Ilute.Model.Utilities
                             var buyerList = successes[bestBid.BuyerIndex];
                             lock (buyerList)
                             {
-                                buyerList.Add((sellerType, sellerIndex, bestBid.Amount));
+                                // The value is the amount the next highest a person would pay.
+                                buyerList.Add((sellerType, sellerIndex, options.Count > 0 ? options[0].Amount : bestBid.Amount));
                             }
                         }
                     });
                 }
                 // make sure we were able to clear something, otherwise we are done.
-                if (!successes.Any(t => t.Count > 0))
+                if (!successes.AsParallel().Any(t => t.Count > 0))
                 {
                     return;
                 }
                 // resolve each selected buyer
                 //Parallel.For(0, successes.Length, (int buyerIndex) =>
-                for(int buyerIndex = 0; buyerIndex < successes.Length; buyerIndex++)
+                for (int buyerIndex = 0; buyerIndex < successes.Length; buyerIndex++)
                 {
                     // Find the option we had with the 
                     var buyerList = successes[buyerIndex];
@@ -89,24 +104,24 @@ namespace TMG.Ilute.Model.Utilities
                             break;
                         case 1:
                             // resolve the choice set and clear out the seller from the model
-                            ResolveSale(buyers[buyerIndex], sellers[buyerList[0].typeIndex][buyerList[0].sellerIndex]);
+                            ResolveSale(buyers[buyerIndex], sellers[buyerList[0].typeIndex][buyerList[0].sellerIndex].Unit, buyerList[buyerIndex].ammount);
                             choiceSets[buyerList[0].typeIndex][buyerList[0].sellerIndex].Clear();
                             break;
                         default:
                             {
-                                float max = buyerList[0].bid;
+                                float max = buyerList[0].ammount;
                                 int maxIndex = 0;
                                 for (int i = 1; i < buyerList.Count; i++)
                                 {
-                                    if (buyerList[i].bid > max
+                                    if (buyerList[i].ammount > max
                                         // we need this condition to resolve ties to avoid having a race condition
-                                        || (buyerList[i].bid == max && buyerList[i].sellerIndex > buyerList[maxIndex].sellerIndex))
+                                        || (buyerList[i].ammount == max && buyerList[i].sellerIndex > buyerList[maxIndex].sellerIndex))
                                     {
                                         maxIndex = i;
                                     }
                                 }
                                 // resolve the choice set and clear out the seller from the model
-                                ResolveSale(buyers[buyerIndex], sellers[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex]);
+                                ResolveSale(buyers[buyerIndex], sellers[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex].Unit, buyerList[buyerIndex].ammount);
                                 choiceSets[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex].Clear();
                             }
                             break;
@@ -132,7 +147,7 @@ namespace TMG.Ilute.Model.Utilities
             }
         }
 
-        protected abstract void ResolveSale(Buyer buyer, Seller seller);
+        protected abstract void ResolveSale(Buyer buyer, Seller seller, float ammount);
 
         public struct Bid : IComparable<Bid>
         {
@@ -157,7 +172,7 @@ namespace TMG.Ilute.Model.Utilities
                 // If there is a tie, give it to the buyer with the highest index to avoid
                 // race conditions.
                 var ret = -Amount.CompareTo(other.Amount);
-                if(ret == 0)
+                if (ret == 0)
                 {
                     return BuyerIndex.CompareTo(other.BuyerIndex);
                 }
@@ -165,7 +180,7 @@ namespace TMG.Ilute.Model.Utilities
             }
         }
 
-        private List<List<List<Bid>>> BuildChoiceSets(Rand random, List<Buyer> buyers, List<List<Seller>> sellers)
+        private List<List<List<Bid>>> BuildChoiceSets(Rand random, List<Buyer> buyers, List<List<SellerValue>> sellers)
         {
             // We make this a list to ensure that we don't end up with race conditions
             var buyersWithRandomSeed = (from buyer in buyers
@@ -184,15 +199,19 @@ namespace TMG.Ilute.Model.Utilities
                     foreach (var bid in ret[typeIndex])
                     {
                         var index = bid.SellerIndex;
-                        if(index < 0 | index >= sellerType.Count)
+                        if (index < 0 | index >= sellerType.Count)
                         {
                             throw new XTMFRuntimeException(this, $"Invalid seller index {index}!  Please check the selection algorithm!");
                         }
-                        var seller = sellerType[index];
-                        lock (seller)
+                        // ignore bids that are too low.
+                        if (bid.Amount >= sellers[typeIndex][index].MinimumPrice)
                         {
-                            // we need to rebuild it to attach the buyer index
-                            seller.Add(new Bid(bid.Amount, bid.SellerIndex) { BuyerIndex = buyerIndex });
+                            var seller = sellerType[index];
+                            lock (seller)
+                            {
+                                // we need to rebuild it to attach the buyer index
+                                seller.Add(new Bid(bid.Amount, index) { BuyerIndex = buyerIndex });
+                            }
                         }
                     }
                 }
@@ -208,12 +227,12 @@ namespace TMG.Ilute.Model.Utilities
             return sellersBids;
         }
 
-        protected abstract List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<Seller>> sellers);
+        protected abstract List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<SellerValue>> sellers);
 
-        private (List<Buyer> buyers, List<List<Seller>> sellers) GetBuyersAndSellers(Rand random)
+        private (List<Buyer> buyers, List<List<SellerValue>> sellers) GetBuyersAndSellers(Rand random)
         {
             List<Buyer> buyers = null;
-            List<List<Seller>> sellers = null;
+            List<List<SellerValue>> sellers = null;
             uint buyerSeed = (uint)(uint.MaxValue * random.Take());
             uint sellerSeed = (uint)(uint.MaxValue * random.Take());
             var buyersRand = new Rand(buyerSeed);
@@ -225,7 +244,7 @@ namespace TMG.Ilute.Model.Utilities
 
         protected abstract List<Buyer> GetBuyers(Rand rand);
 
-        protected abstract List<List<Seller>> GetSellers(Rand rand);
+        protected abstract List<List<SellerValue>> GetSellers(Rand rand);
 
         public virtual bool RuntimeValidation(ref string error)
         {

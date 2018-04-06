@@ -31,23 +31,26 @@ using XTMF;
 
 namespace TMG.Ilute.Model.Housing
 {
-    /*
     public sealed class HousingMarket : MarketModel<Household, Dwelling>, IExecuteMonthly, ICSVYearlySummary
     {
         [RunParameter("Random Seed", 12345, "The random seed to use for this model.")]
         public int RandomSeed;
 
         [SubModelInformation(Required = true, Description = "The model to select the price a household would spend.")]
-        public ISelectPriceMonthly<Household, SellerValues> Bid;
+        public ISelectPriceMonthly<Household, Dwelling> BidModel;
 
         [SubModelInformation(Required = true, Description = "The model to predict the minimum price allowed for a sale.")]
-        public ISelectPriceMonthly<Dwelling, SellerValues> MinimumPrices;
+        public ISelectSaleValue<Dwelling> MinimumPrices;
+
+        [SubModelInformation(Required = true, Description = "The model to predict the asking price for a sale.")]
+        public ISelectSaleValue<Dwelling> AskingPrices;
 
         [SubModelInformation(Required = true, Description = "A source of dwellings in the model.")]
         public IDataSource<Repository<Dwelling>> DwellingRepository;
 
         private long _boughtDwellings;
         private double _totalSalePrice;
+        private Date _currentTime;
 
         private ConcurrentDictionary<long, Household> _remainingHouseholds = new ConcurrentDictionary<long, Household>();
         private ConcurrentDictionary<long, Dwelling> _remainingDwellings = new ConcurrentDictionary<long, Dwelling>();
@@ -64,27 +67,32 @@ namespace TMG.Ilute.Model.Housing
 
         public void AfterMonthlyExecute(int currentYear, int month)
         {
-            Bid.AfterMonthlyExecute(currentYear, month);
+            BidModel.AfterMonthlyExecute(currentYear, month);
+            MinimumPrices.AfterMonthlyExecute(currentYear, month);
         }
 
         public void AfterYearlyExecute(int currentYear)
         {
-            Bid.AfterYearlyExecute(currentYear);
+            BidModel.AfterYearlyExecute(currentYear);
+            MinimumPrices.AfterYearlyExecute(currentYear);
         }
 
         public void BeforeFirstYear(int firstYear)
         {
-            Bid.BeforeFirstYear(firstYear);
+            BidModel.BeforeFirstYear(firstYear);
+            MinimumPrices.BeforeFirstYear(firstYear);
         }
 
         public void BeforeMonthlyExecute(int currentYear, int month)
         {
-            Bid.BeforeMonthlyExecute(currentYear, month);
+            BidModel.BeforeMonthlyExecute(currentYear, month);
+            MinimumPrices.BeforeMonthlyExecute(currentYear, month);
         }
 
         public void BeforeYearlyExecute(int currentYear)
         {
-            Bid.BeforeYearlyExecute(currentYear);
+            BidModel.BeforeYearlyExecute(currentYear);
+            MinimumPrices.BeforeYearlyExecute(currentYear);
             // cleanup the accumulators for statistics
             _boughtDwellings = 0;
             _totalSalePrice = 0;
@@ -92,57 +100,96 @@ namespace TMG.Ilute.Model.Housing
 
         public void Execute(int currentYear, int month)
         {
+            _currentTime = new Date(currentYear, month);
             // create the random seed for this execution of the housing market and start
             var r = new Rand((uint)(currentYear * RandomSeed + month));
-            Execute(currentYear, month, r);
+            Execute(r, currentYear, month);
         }
 
         public void RunFinished(int finalYear)
         {
+            BidModel.RunFinished(finalYear);
+            MinimumPrices.RunFinished(finalYear);
         }
 
-        protected override List<Household> GetActiveBuyers(int year, int month, Rand random)
+        protected override List<Household> GetBuyers(Rand rand)
         {
-            return new List<Household>();
+            throw new NotImplementedException();
         }
 
-        protected override List<SellerValues> GetActiveSellers(int year, int month, Rand random)
+        [RunParameter("Max Bedrooms", 7, "The maximum number of bedrooms to consider.")]
+        public int MaxBedrooms;
+
+        private const int DwellingCategories = 5;
+        private const int Detched = 0;
+        private const int Attached = 1;
+        private const int SemiDetached = 2;
+        private const int ApartmentLow = 3;
+        private const int ApartmentHigh = 4;
+
+        protected override List<List<SellerValue>> GetSellers(Rand rand)
         {
-            var activeSellers = (from dwelling in Repository.GetRepository(DwellingRepository).AsParallel().AsOrdered()
-                    where dwelling.Household == null
-                    select AssignMinimumPrices(new SellerValues()
-                    {
-                        Unit = dwelling
-                    })).ToList();
-            Parallel.For(0, activeSellers.Count, (int i) =>
+            int length = DwellingCategories * MaxBedrooms;
+            var ret = new List<List<SellerValue>>(length);
+            for (int i = 0; i < length; i++)
             {
-                var dwelling = activeSellers[i].Unit;
-                
-            });
-            return activeSellers;
+                ret.Add(new List<SellerValue>());
+            }
+            // Get all of the empty dwellings
+            var dwellings = Repository.GetRepository(DwellingRepository);
+            var candidates = dwellings.Where(d => d.Exists && (d.Household == null || OptIn(rand, d)));
+            // sort the candidates into the proper lists
+            foreach(var d in candidates)
+            {
+                var offset = Detched;
+                switch(d.Type)
+                {
+                    case Dwelling.DwellingType.Detched:
+                        break;
+                    case Dwelling.DwellingType.SemiDetached:
+                        offset = SemiDetached;
+                        break;
+                    case Dwelling.DwellingType.Attached:
+                        offset = Attached;
+                        break;
+                    case Dwelling.DwellingType.ApartmentLow:
+                        offset = ApartmentLow;
+                        break;
+                    case Dwelling.DwellingType.ApartmentHigh:
+                        offset = ApartmentHigh;
+                        break;
+                }
+                (var asking, var min) = AskingPrices.GetPrice(d);
+                ret[MaxBedrooms * offset + Math.Max(Math.Min(MaxBedrooms - 1, d.Rooms), 0)].Add(new SellerValue(d, asking, min));
+            }
+            return ret;
         }
 
-        private SellerValues AssignMinimumPrices(SellerValues sellerValues)
+        private bool OptIn(Rand rand, Dwelling d)
         {
-            //TODO: We should actually call a model to assign both a minimum price and an asking price here.
-            return sellerValues;
+            throw new NotImplementedException();
         }
 
-        protected override float GetOffer(SellerValues seller, Household nextBuyer, int year, int month)
+        protected override void ResolveSale(Household buyer, Dwelling seller, float transactionPrice)
         {
-            return Bid.GetPrice(nextBuyer, seller);
-        }
-
-        protected override void ResolveSelection(Dwelling seller, Household buyer)
-        {
-            var sellingHousehold = seller.Household;
-            
+            // if this house is the current dwelling of the household that owns it, set that household to not have a dwelling
+            if(seller.Household != null)
+            {
+                var sellerDwelling = seller.Household.Dwelling;
+                if(sellerDwelling == seller)
+                {
+                    seller.Household.Dwelling = null;
+                }
+            }
+            // Link the buying household with their new dwelling
+            seller.Household = buyer;
             buyer.Dwelling = seller;
-            // remove the currently selected pairing from the remaining
-            Interlocked.Increment(ref _boughtDwellings);
-            _remainingDwellings.TryRemove(seller.Id, out seller);
-            _remainingHouseholds.TryRemove(buyer.Id, out buyer);
+            seller.Value = new Money(transactionPrice, _currentTime);
+        }
+
+        protected override List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<SellerValue>> sellers)
+        {
+            throw new NotImplementedException();
         }
     }
-    */
 }

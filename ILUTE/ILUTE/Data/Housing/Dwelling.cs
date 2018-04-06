@@ -53,12 +53,23 @@ namespace TMG.Ilute.Data.Housing
         /// </summary>
         public Money Value { get; set; }
 
+        public DwellingType Type { get; internal set; }
+
         public override void BeingRemoved()
         {
             if (Household != null)
             {
                 Household.Dwelling = null;
             }
+        }
+
+        public enum DwellingType
+        {
+            Detched = 0,
+            Attached = 1,
+            SemiDetached = 2,
+            ApartmentLow = 3,
+            ApartmentHigh = 4
         }
     }
 }

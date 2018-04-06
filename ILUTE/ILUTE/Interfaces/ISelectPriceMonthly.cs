@@ -28,4 +28,9 @@ namespace TMG.Ilute
     {
         float GetPrice(Buyer buyer, Seller seller);
     }
+
+    public interface ISelectSaleValue<Seller> : IExecuteMonthly
+    {
+        (float askingPrice, float minimumPrice) GetPrice(Seller seller);
+    }
 }
