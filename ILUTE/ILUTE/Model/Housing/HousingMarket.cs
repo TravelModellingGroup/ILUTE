@@ -45,6 +45,19 @@ namespace TMG.Ilute.Model.Housing
         [SubModelInformation(Required = true, Description = "A source of dwellings in the model.")]
         public IDataSource<Repository<Dwelling>> DwellingRepository;
 
+        
+        public int InitialAverageSellingPriceDetached;
+        public int InitialAverageSellingPriceSemi;
+        public int InitialAverageSellingPriceApartmentHigh;
+        public int InitialAverageSellingPriceApartmentLow;
+        public int InitialAverageSellingPriceAtt;
+
+        private int _averageSellingPriceDetached;
+        private int _averageSellingPriceSemi;
+        private int _averageSellingPriceApartmentHigh;
+        private int _averageSellingPriceApartmentLow;
+        private int _averageSellingPriceAtt;
+
         private long _boughtDwellings;
         private double _totalSalePrice;
 
