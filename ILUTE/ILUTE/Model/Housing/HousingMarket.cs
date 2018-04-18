@@ -31,7 +31,7 @@ using XTMF;
 
 namespace TMG.Ilute.Model.Housing
 {
-    public sealed class HousingMarket : MarketModel<Household, Dwelling>, IExecuteMonthly, ICSVYearlySummary
+    public sealed class HousingMarket : MarketModel<Household, Dwelling>, IExecuteMonthly, ICSVYearlySummary, IDisposable
     {
         [RunParameter("Random Seed", 12345, "The random seed to use for this model.")]
         public int RandomSeed;
@@ -48,7 +48,35 @@ namespace TMG.Ilute.Model.Housing
         [SubModelInformation(Required = true, Description = "A source of dwellings in the model.")]
         public IDataSource<Repository<Dwelling>> DwellingRepository;
 
-        
+        [SubModelInformation(Required = true, Description = "A link to the effect of currency over time.")]
+        public IDataSource<CurrencyManager> CurrencyManager;
+        private CurrencyManager _currencyManager;
+
+        #region Parameters
+        private const float RES_MOBILITY_SCALER = 0.5F;
+        // From MA Habib pg 46:
+        private const float RES_MOBILITY_CONSTANT = -0.084F;
+        private const float INC_NUM_JOBS = -0.198F;
+        private const float INC_NUM_JOBS_ST_DEV = 1.254F;
+        private const float DEC_NUM_JOBS = 0.474F;
+        private const float RETIREMENT_IN_HHLD = 0.448F;
+        private const float DUR_IN_DWELL_ST_DEV = 0.045F;
+        private const float DUR_IN_DWELL = -0.054F;
+        private const float JOB_CHANGE = 0.296F;
+        private const float JOB_CHANGE_ST_DEV = 0.762F;
+        private const float CHILD_BIRTH = 0.326F;
+        private const float CHILD_BIRTH_ST_DEV = 0.219F;
+        private const float DEC_HHLD_SIZE = 0.133F;
+        private const float HHLD_HEAD_AGE = -0.029F;
+        private const float HHLD_HEAD_AGE_ST_DEV = 0.002F;
+        private const float NUM_JOBS = -0.086F;
+        private const float NON_MOVER_RATIO = -0.110F;
+        private const float LABOUR_FORCE_PARTN = 0.004F;
+        private const float CHANGE_IN_BIR = -0.013F;
+        private const float CHANGE_IN_BIR_ST_DEV = 0.035F;
+        #endregion
+
+
         public int InitialAverageSellingPriceDetached;
         public int InitialAverageSellingPriceSemi;
         public int InitialAverageSellingPriceApartmentHigh;
@@ -86,6 +114,11 @@ namespace TMG.Ilute.Model.Housing
 
         public void AfterYearlyExecute(int currentYear)
         {
+            if(!CurrencyManager.Loaded)
+            {
+                CurrencyManager.LoadData();
+            }
+            _currencyManager = CurrencyManager.GiveData();
             BidModel.AfterYearlyExecute(currentYear);
             MinimumPrices.AfterYearlyExecute(currentYear);
         }
@@ -125,11 +158,6 @@ namespace TMG.Ilute.Model.Housing
             MinimumPrices.RunFinished(finalYear);
         }
 
-        protected override List<Household> GetBuyers(Rand rand)
-        {
-            throw new NotImplementedException();
-        }
-
         [RunParameter("Max Bedrooms", 7, "The maximum number of bedrooms to consider.")]
         public int MaxBedrooms;
 
@@ -140,8 +168,114 @@ namespace TMG.Ilute.Model.Housing
         private const int ApartmentLow = 3;
         private const int ApartmentHigh = 4;
 
+        private SemaphoreSlim _buyersReady = new SemaphoreSlim(0);
+
+        private List<Dwelling> _monthlyBuyerCurrentDwellings;
+
+        protected override List<Household> GetBuyers(Rand rand)
+        {
+            try
+            {
+                var buyers = new List<Household>();
+                foreach (var dwelling in Repository.GetRepository(DwellingRepository))
+                {
+                    var hhld = dwelling.Household;
+                    if (hhld != null && hhld.Tenure == DwellingUnitTenure.own)
+                    {
+                        // if this dwelling is not the active dwelling for the household
+                        if (hhld.Dwelling != dwelling)
+                        {
+                            _monthlyBuyerCurrentDwellings.Add(dwelling);
+                        }
+                        if (OptIntoMarket(rand, hhld))
+                        {
+                            _monthlyBuyerCurrentDwellings.Add(dwelling);
+                            if (!buyers.Contains(hhld)) buyers.Add(hhld);
+                        }
+                    }
+                }
+                return buyers;
+            }
+            finally
+            {
+                _buyersReady.Release();
+            }
+        }
+
+        private double _changeInBIR;
+
+        private int _currentYear, _currentMonth;
+
+        private bool OptIntoMarket(Rand rand, Household hhld)
+        {
+            var dwelling = hhld.Dwelling;
+            // 1% chance of increasing the # of employed people in the household
+            bool jobIncrease = false;
+            if (rand.NextFloat() <= 0.01) { jobIncrease = true; }
+
+            // 1% chance of decreasing the # of employed people in the household
+            bool jobDecrease = false;
+            if (rand.NextFloat() <= 0.01) { jobDecrease = true; }
+
+            // 1% chance of a household member retiring
+            bool retirement = false;
+            if (rand.NextFloat() <= 0.01) { retirement = true; }
+
+            bool jobChange = false;
+            if (rand.NextFloat() <= 0.01) { jobChange = true; }
+
+            var newChild = hhld.Families.Any(f => f.Persons.Any(p => p.Age <= 0));
+            var lastTransactionDate = hhld.Dwelling.Value.WhenCreated;
+            double yearsInDwelling = ((_currentYear * 12 + _currentMonth) - lastTransactionDate.Months) / 12;
+
+            var headAge = hhld.Families.Max(f => f.Persons.Max(p => p.Age));
+            var numbOfJobs = hhld.Families.Sum(f => f.Persons.Count(p => p.Jobs.Any()));
+
+            int demandCounter = 0;
+            double probMoving = RES_MOBILITY_CONSTANT;  // base parameter (M.A. Habib, 2009. pg. 46)
+
+            if (jobIncrease)
+            {
+                demandCounter++;
+                probMoving += rand.InvStdNormalCDF() + INC_NUM_JOBS_ST_DEV + INC_NUM_JOBS;
+            }
+            if(jobDecrease)
+            {
+                demandCounter--;
+                probMoving += DEC_NUM_JOBS;
+            }
+            if(retirement)
+            {
+                probMoving += RETIREMENT_IN_HHLD;
+            }
+            if(jobChange)
+            {
+                probMoving += rand.InvStdNormalCDF() * JOB_CHANGE_ST_DEV + JOB_CHANGE;
+            }
+            if(newChild)
+            {
+                demandCounter++;
+                probMoving += rand.InvStdNormalCDF() * CHILD_BIRTH_ST_DEV + CHILD_BIRTH;
+            }
+
+            probMoving += headAge * (rand.InvStdNormalCDF() * HHLD_HEAD_AGE_ST_DEV + HHLD_HEAD_AGE)
+                          + _changeInBIR * (rand.InvStdNormalCDF() * CHANGE_IN_BIR_ST_DEV + CHANGE_IN_BIR)
+                          + yearsInDwelling * (rand.InvStdNormalCDF() * DUR_IN_DWELL_ST_DEV + DUR_IN_DWELL)
+                          + numbOfJobs * NUM_JOBS
+                          // TODO: Build the backend for these parts of the utility function
+                          //+ nonmoverRatio * NON_MOVER_RATIO
+                          //+ labourForcePartRate * LABOUR_FORCE_PARTN
+                          ;
+
+            probMoving = Math.Exp(probMoving) / (1 + Math.Exp(probMoving)) * RES_MOBILITY_SCALER;
+            return probMoving >= rand.NextDouble();
+        }
+
         protected override List<List<SellerValue>> GetSellers(Rand rand)
         {
+            // Wait for all of the buyers to be processed.
+            _buyersReady.Wait();
+            Interlocked.MemoryBarrier();
             int length = DwellingCategories * MaxBedrooms;
             var ret = new List<List<SellerValue>>(length);
             for (int i = 0; i < length; i++)
@@ -150,46 +284,46 @@ namespace TMG.Ilute.Model.Housing
             }
             // Get all of the empty dwellings
             var dwellings = Repository.GetRepository(DwellingRepository);
-            var candidates = dwellings.Where(d => d.Exists && (d.Household == null || OptIn(rand, d)));
+            var candidates = dwellings.Where(d => d.Exists && (d.Household == null)).Union(_monthlyBuyerCurrentDwellings);
             // sort the candidates into the proper lists
-            foreach(var d in candidates)
+            foreach (var d in candidates)
             {
-                var offset = Detched;
-                switch(d.Type)
-                {
-                    case Dwelling.DwellingType.Detched:
-                        break;
-                    case Dwelling.DwellingType.SemiDetached:
-                        offset = SemiDetached;
-                        break;
-                    case Dwelling.DwellingType.Attached:
-                        offset = Attached;
-                        break;
-                    case Dwelling.DwellingType.ApartmentLow:
-                        offset = ApartmentLow;
-                        break;
-                    case Dwelling.DwellingType.ApartmentHigh:
-                        offset = ApartmentHigh;
-                        break;
-                }
                 (var asking, var min) = AskingPrices.GetPrice(d);
-                ret[MaxBedrooms * offset + Math.Max(Math.Min(MaxBedrooms - 1, d.Rooms), 0)].Add(new SellerValue(d, asking, min));
+                ret[ComputeHouseholdCategory(d)].Add(new SellerValue(d, asking, min));
             }
             return ret;
         }
 
-        private bool OptIn(Rand rand, Dwelling d)
+        private int ComputeHouseholdCategory(Dwelling d)
         {
-            throw new NotImplementedException();
+            var offset = Detched;
+            switch (d.Type)
+            {
+                case Dwelling.DwellingType.Detched:
+                    break;
+                case Dwelling.DwellingType.SemiDetached:
+                    offset = SemiDetached;
+                    break;
+                case Dwelling.DwellingType.Attached:
+                    offset = Attached;
+                    break;
+                case Dwelling.DwellingType.ApartmentLow:
+                    offset = ApartmentLow;
+                    break;
+                case Dwelling.DwellingType.ApartmentHigh:
+                    offset = ApartmentHigh;
+                    break;
+            }
+            return MaxBedrooms * offset + Math.Max(Math.Min(MaxBedrooms - 1, d.Rooms), 0);
         }
 
         protected override void ResolveSale(Household buyer, Dwelling seller, float transactionPrice)
         {
             // if this house is the current dwelling of the household that owns it, set that household to not have a dwelling
-            if(seller.Household != null)
+            if (seller.Household != null)
             {
                 var sellerDwelling = seller.Household.Dwelling;
-                if(sellerDwelling == seller)
+                if (sellerDwelling == seller)
                 {
                     seller.Household.Dwelling = null;
                 }
@@ -204,5 +338,34 @@ namespace TMG.Ilute.Model.Housing
         {
             throw new NotImplementedException();
         }
+
+        #region IDisposable Support
+        private bool _disposedValue = false; // To detect redundant calls
+
+        void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    _buyersReady?.Dispose();
+                    _buyersReady = null;
+                }
+                _disposedValue = true;
+            }
+        }
+
+        ~HousingMarket()
+        {
+            Dispose(false);
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }
