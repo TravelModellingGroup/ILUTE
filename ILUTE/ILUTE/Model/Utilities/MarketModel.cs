@@ -1,5 +1,5 @@
-﻿/*
-    Copyright 2016 Travel Modelling Group, Department of Civil Engineering, University of Toronto
+﻿/*0
+    Copyright 2016-2018 Travel Modelling Group, Department of Civil Engineering, University of Toronto
 
     This file is part of ILUTE, a set of modules for XTMF.
 
@@ -18,6 +18,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,214 +31,230 @@ namespace TMG.Ilute.Model.Utilities
         where Buyer : IndexedObject
         where Seller : IndexedObject
     {
-        public struct SellerValues
+        [RunParameter("MaxIterations", 20, "The maximum number of market clearing iterations to perform.")]
+        public int MaxIterations;
+
+        public struct SellerValue
         {
-            public float AskingPrice;
-            public float MinimumPrice;
-            public Seller Unit;
-        }
+            internal readonly Seller Unit;
+            internal readonly float AskingPrice;
+            internal readonly float MinimumPrice;
 
-        private struct BuyerOffer
-        {
-            internal Buyer Buyer;
-            internal float Offer;
-        }
-
-        private struct ChoiceSet
-        {
-            internal SellerValues Seller;
-            internal BuyerOffer[] PotentialBuyers;
-        }
-
-
-        private struct BuyerOptions
-        {
-            internal int BestIndex;
-            internal float BestPrice;
-        }
-
-        [RunParameter("Choice Set Size", 10, "The number of buyers allowed to bid on a seller.")]
-        public int ChoiceSetSize;
-
-        public string Name
-        {
-            get; set;
-        }
-
-        public float Progress => 0f;
-
-        public Tuple<byte, byte, byte> ProgressColour =>  new Tuple<byte, byte, byte>(50, 150, 50);
-
-        /// <summary>
-        /// Provide a list of buyers for the current time period
-        /// </summary>
-        /// <param name="year">The current year</param>
-        /// <param name="month">The current month</param>
-        /// <param name="random">A random number generator to use (1 thread for this generator only)</param>
-        /// <returns>The list of buyers for the market selection cycle.</returns>
-        protected abstract List<Buyer> GetActiveBuyers(int year, int month, Rand random);
-
-        /// <summary>
-        /// Provide a list of seller data for the current time period
-        /// </summary>
-        /// <param name="year">The current year</param>
-        /// <param name="month">The current month</param>
-        /// <param name="random">A random number generator to use (1 thread for this generator only)</param>
-        /// <returns>Provides a list of sellers and market selection attributes.</returns>
-        protected abstract List<SellerValues> GetActiveSellers(int year, int month, Rand random);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="seller">The seller of the item</param>
-        /// <param name="nextBuyer">The object buying the sold item.</param>
-        /// <param name="year">The current year</param>
-        /// <param name="month">The current month</param>
-        /// <returns></returns>
-        protected abstract float GetOffer(SellerValues seller, Buyer nextBuyer, int year, int month);
-
-        protected abstract void ResolveSelection(Seller seller, Buyer buyer);
-
-        protected void Execute(int year, int month, Rand random)
-        {
-            var buyers = GetActiveBuyers(year, month, random);
-            var choiceSets = CreateChoiceSets(year, month, buyers, GetActiveSellers(year, month, random), random);
-
-            for (int i = 0; i < ChoiceSetSize; i++)
+            public SellerValue(Seller seller, float askingPrice, float minimumPrice)
             {
-                var buyerIndexes = BuildIndexes(buyers);
-                ResolveChoiceSets(choiceSets, buyerIndexes);
+                Unit = seller;
+                AskingPrice = askingPrice;
+                MinimumPrice = minimumPrice;
             }
         }
 
-        private Dictionary<Buyer, int> BuildIndexes(List<Buyer> buyers)
+        protected void Execute(Rand random, int year, int month)
         {
-            var ret = new Dictionary<Buyer, int>(buyers.Count);
-            for (int i = 0; i < buyers.Count; i++)
+            /*
+             * Get Buyers | Get Sellers
+             * For each buyer
+             *   For each seller type
+             *     Search through and offer bids
+             * Process Buyer offers for each seller
+             * Sort top buyers in order
+             * Select the successful buyers, and maintain a conflict list
+             * Resolve conflicts
+             * Remove successful bidders and sellers from choice sets
+             * Repeat until all sellers with bidders are resolved or max iterations
+             */
+            (var buyers, var sellers) = GetBuyersAndSellers(random);
+            Console.WriteLine($"Buyers {buyers.Count} -> Sellers {sellers.Count}");
+            var choiceSets = BuildChoiceSets(random, buyers, sellers);
+            for (int iteration = 0; iteration < MaxIterations; ++iteration)
             {
-                ret.Add(buyers[i], i);
-            }
-            return ret;
-        }
-
-        private List<ChoiceSet> CreateChoiceSets(int year, int month, List<Buyer> buyers, List<SellerValues> sellers, Rand random)
-        {
-            var sets = new List<ChoiceSet>(sellers.Count);
-            if (ChoiceSetSize > buyers.Count)
-            {
-                throw new XTMFRuntimeException(this, $"In '{Name}' there were insufficient buyers in the market for the choice set size!");
-            }
-            foreach (var seller in sellers)
-            {
-                ChoiceSet set = new ChoiceSet
+                var successes = buyers.Select(buyer => new List<(int typeIndex, int sellerIndex, float ammount)>()).ToArray();
+                // Get all of the best buyers
+                for (int sellerType = 0; sellerType < choiceSets.Count; ++sellerType)
                 {
-                    Seller = seller,
-                    PotentialBuyers = new BuyerOffer[ChoiceSetSize]
-                };
-                for (int i = 0; i < set.PotentialBuyers.Length; i++)
-                {
-                    var nextBuyer = buyers[(int)(random.NextFloat() * buyers.Count)];
-                    // if they were already selected try again
-                    if (Array.IndexOf(set.PotentialBuyers, nextBuyer) >= 0)
+                    Parallel.For(0, choiceSets[sellerType].Count, (int sellerIndex) =>
                     {
-                        i--;
-                        continue;
-                    }
-                    var offer = GetOffer(seller, nextBuyer, year, month);
-                    // sort the offers while inserting them
-                    int place = 0;
-
-                    for (; place < i && offer > set.PotentialBuyers[place].Offer; place++) { }
-                    if (place < i)
-                    {
-                        Array.Copy(set.PotentialBuyers, place, set.PotentialBuyers, place + 1, set.PotentialBuyers.Length - place - 1);
-                    }
-                    set.PotentialBuyers[place] = new BuyerOffer()
-                    {
-                        Buyer = nextBuyer,
-                        Offer = offer
-                    };
+                        var options = choiceSets[sellerType][sellerIndex];
+                        if (options.Count > 0)
+                        {
+                            var bestBid = options[0];
+                            options.RemoveAt(0);
+                            var buyerList = successes[bestBid.BuyerIndex];
+                            lock (buyerList)
+                            {
+                                // The value is the amount the next highest a person would pay.
+                                buyerList.Add((sellerType, sellerIndex, options.Count > 0 ? options[0].Amount : bestBid.Amount));
+                            }
+                        }
+                    });
                 }
-                // remove offers less than the minimum price
-                for (int i = 0; i < set.PotentialBuyers.Length; i++)
+                // make sure we were able to clear something, otherwise we are done.
+                if (!successes.AsParallel().Any(t => t.Count > 0))
                 {
-                    if(set.PotentialBuyers[i].Offer < set.Seller.MinimumPrice)
-                    {
-                        set.PotentialBuyers[i].Offer = 0;
-                        set.PotentialBuyers[i].Buyer = default(Buyer);
-                    }
+                    return;
                 }
-                sets.Add(set);
-            }
-            return sets;
-        }
-
-        private void ResolveChoiceSets(List<ChoiceSet> choiceSets, Dictionary<Buyer, int> buyerToIndex)
-        {
-            var selectionIndex = new BuyerOptions[buyerToIndex.Count];
-            for (int i = 0; i < selectionIndex.Length; i++)
-            {
-                selectionIndex[i].BestIndex = -1;
-            }
-            // get the best option for each buyer
-            for (int i = 0; i < choiceSets.Count; i++)
-            {
-                var potential = choiceSets[i].PotentialBuyers[0];
-                if (potential.Buyer != null)
+                // resolve each selected buyer
+                //Parallel.For(0, successes.Length, (int buyerIndex) =>
+                for (int buyerIndex = 0; buyerIndex < successes.Length; buyerIndex++)
                 {
-                    var index = buyerToIndex[potential.Buyer];
-                    var other = selectionIndex[index];
-                    if (other.BestIndex < 0 || other.BestPrice < potential.Offer)
+                    // Find the option we had with the 
+                    var buyerList = successes[buyerIndex];
+                    switch (buyerList.Count)
                     {
-                        selectionIndex[index] = new BuyerOptions() { BestPrice = potential.Offer, BestIndex = i };
+                        case 0:
+                            break;
+                        case 1:
+                            // resolve the choice set and clear out the seller from the model
+                            ResolveSale(buyers[buyerIndex], sellers[buyerList[0].typeIndex][buyerList[0].sellerIndex].Unit, buyerList[buyerIndex].ammount);
+                            choiceSets[buyerList[0].typeIndex][buyerList[0].sellerIndex].Clear();
+                            break;
+                        default:
+                            {
+                                float max = buyerList[0].ammount;
+                                int maxIndex = 0;
+                                for (int i = 1; i < buyerList.Count; i++)
+                                {
+                                    if (buyerList[i].ammount > max
+                                        // we need this condition to resolve ties to avoid having a race condition
+                                        || (buyerList[i].ammount == max && buyerList[i].sellerIndex > buyerList[maxIndex].sellerIndex))
+                                    {
+                                        maxIndex = i;
+                                    }
+                                }
+                                // resolve the choice set and clear out the seller from the model
+                                ResolveSale(buyers[buyerIndex], sellers[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex].Unit, buyerList[buyerIndex].ammount);
+                                choiceSets[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex].Clear();
+                            }
+                            break;
                     }
+                }//);
+                // Sweep all of the successful buyers from the choice sets
+                for (int sellerType = 0; sellerType < choiceSets.Count; ++sellerType)
+                {
+                    Parallel.For(0, choiceSets[sellerType].Count, (int sellerIndex) =>
+                    {
+                        var options = choiceSets[sellerType][sellerIndex];
+                        for (int i = 0; i < options.Count; i++)
+                        {
+                            // if the buyer was successful remove them from the set
+                            // and make sure to reduce our current index
+                            if (successes[options[i].BuyerIndex].Count > 0)
+                            {
+                                options.RemoveAt(i--);
+                            }
+                        }
+                    });
                 }
             }
-            var successfulBuyers = new HashSet<Buyer>();
-            var indexOfSelectedChoiceSet = new List<int>(choiceSets.Count);
-            // now that everything is selected, do the assignments and reduce the choice sets
-            for (int i = 0; i < selectionIndex.Length; i++)
+        }
+
+        protected abstract void ResolveSale(Buyer buyer, Seller seller, float ammount);
+
+        public struct Bid : IComparable<Bid>
+        {
+            public readonly float Amount;
+            public readonly int SellerIndex;
+
+            /// <summary>
+            /// This variable gets set by the MarketModel
+            /// </summary>
+            internal int BuyerIndex;
+
+            public Bid(float amount, int sellerIndex)
             {
-                if (selectionIndex[i].BestIndex >= 0)
+                Amount = amount;
+                SellerIndex = sellerIndex;
+                BuyerIndex = -1;
+            }
+
+            public int CompareTo(Bid other)
+            {
+                // We want the highest bids to go first when sorted,
+                // If there is a tie, give it to the buyer with the highest index to avoid
+                // race conditions.
+                var ret = -Amount.CompareTo(other.Amount);
+                if (ret == 0)
                 {
-                    var selectedSeller = choiceSets[selectionIndex[i].BestIndex];
-                    var buyer = selectedSeller.PotentialBuyers[0].Buyer;
-                    successfulBuyers.Add(buyer);
-                    ResolveSelection(selectedSeller.Seller.Unit, buyer);
-                    indexOfSelectedChoiceSet.Add(selectionIndex[i].BestIndex);
-                    buyerToIndex.Remove(buyer);
+                    return BuyerIndex.CompareTo(other.BuyerIndex);
                 }
+                return ret;
             }
-            // sort everything so we can remove them backwards so the indexes will not be invalidated
-            indexOfSelectedChoiceSet.Sort();
-            for (int i = indexOfSelectedChoiceSet.Count - 1; i >= 0 ; i--)
+        }
+
+        private List<List<List<Bid>>> BuildChoiceSets(Rand random, List<Buyer> buyers, List<List<SellerValue>> sellers)
+        {
+            // We make this a list to ensure that we don't end up with race conditions
+            var buyersWithRandomSeed = (from buyer in buyers
+                                        select (buyer, randomSeed: random.Take())).ToList();
+            // construct the data structure to store the results into
+            var sellersBids = sellers.Select(inner => inner.AsParallel().Select(s => new List<Bid>()).ToList()).ToList();
+            // we don't need to use a random stream because we should already have all of the cores full. 
+            Parallel.For(0, buyersWithRandomSeed.Count, (int buyerIndex) =>
             {
-                choiceSets.RemoveAt(indexOfSelectedChoiceSet[i]);
-            }
-            // clear buyers from choice sets
-            Parallel.For(0, choiceSets.Count, (int i) =>
-            {
-                var buyers = choiceSets[i].PotentialBuyers;
-                for (int j = 0; j < buyers.Length && buyers[j].Buyer != null; j++)
+                Rand buyerRand = new Rand((uint)(buyersWithRandomSeed[buyerIndex].randomSeed * uint.MaxValue));
+                var ret = SelectSellers(buyerRand, sellers);
+                // Record the results
+                for (int typeIndex = 0; typeIndex < ret.Count; ++typeIndex)
                 {
-                    if (successfulBuyers.Contains(buyers[j].Buyer))
+                    var sellerType = sellersBids[typeIndex];
+                    foreach (var bid in ret[typeIndex])
                     {
-                        Array.Copy(buyers, j + 1, buyers, j, buyers.Length - (j + 1));
-                        buyers[buyers.Length - 1].Buyer = default(Buyer);
-                        j--;
+                        var index = bid.SellerIndex;
+                        if (index < 0 | index >= sellerType.Count)
+                        {
+                            throw new XTMFRuntimeException(this, $"Invalid seller index {index}!  Please check the selection algorithm!");
+                        }
+                        // ignore bids that are too low.
+                        if (bid.Amount >= sellers[typeIndex][index].MinimumPrice)
+                        {
+                            var seller = sellerType[index];
+                            lock (seller)
+                            {
+                                // we need to rebuild it to attach the buyer index
+                                seller.Add(new Bid(bid.Amount, index) { BuyerIndex = buyerIndex });
+                            }
+                        }
                     }
                 }
             });
+            // Sort all of the bids in order of best bid first
+            foreach (var sellerType in sellersBids)
+            {
+                Parallel.ForEach(sellerType, seller =>
+                {
+                    seller.Sort();
+                });
+            }
+            return sellersBids;
         }
+
+        protected abstract List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<SellerValue>> sellers);
+
+        private (List<Buyer> buyers, List<List<SellerValue>> sellers) GetBuyersAndSellers(Rand random)
+        {
+            List<Buyer> buyers = null;
+            List<List<SellerValue>> sellers = null;
+            uint buyerSeed = (uint)(uint.MaxValue * random.Take());
+            uint sellerSeed = (uint)(uint.MaxValue * random.Take());
+            var buyersRand = new Rand(buyerSeed);
+            var sellersRand = new Rand(sellerSeed);
+            Parallel.Invoke(() => buyers = GetBuyers(buyersRand),
+                            () => sellers = GetSellers(sellersRand));
+            return (buyers, sellers);
+        }
+
+        protected abstract List<Buyer> GetBuyers(Rand rand);
+
+        protected abstract List<List<SellerValue>> GetSellers(Rand rand);
 
         public virtual bool RuntimeValidation(ref string error)
         {
-            if (ChoiceSetSize <= 0)
-            {
-                error = $"In '{Name}' the choice set size must be greater than zero!";
-                return false;
-            }
             return true;
         }
+
+        public string Name { get; set; }
+
+        public Tuple<byte, byte, byte> ProgressColour => new Tuple<byte, byte, byte>(50, 150, 50);
+
+        public float Progress => 0f;
     }
 }

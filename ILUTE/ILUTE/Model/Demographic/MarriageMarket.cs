@@ -29,10 +29,10 @@ using TMG.Input;
 using Datastructure;
 using System.Collections.Concurrent;
 using TMG.Functions;
+using System.Threading;
 
 namespace TMG.Ilute.Model.Demographic
 {
-
     public sealed class MarriageMarket : MarketModel<Person, Person>, IExecuteYearly, ICSVYearlySummary, IDisposable
     {
 
@@ -100,7 +100,7 @@ namespace TMG.Ilute.Model.Demographic
             var currentDate = new Date(year, 0);
             _randomGenerator.ExecuteWithProvider((rand) =>
            {
-               Execute(year, 0, rand);
+               Execute(rand, year, 0);
            });
             _males = null;
             _females = null;
@@ -150,6 +150,7 @@ namespace TMG.Ilute.Model.Demographic
                 female.Family = f;
                 families.AddNew(f);
             }
+            Interlocked.Increment(ref MarriagesInYear);
         }
 
         private static int GetDataIndex(int age, Sex sex, MaritalStatus status, int deltaYear)
@@ -232,24 +233,41 @@ namespace TMG.Ilute.Model.Demographic
             Dispose(true);
         }
 
-        protected override List<Person> GetActiveBuyers(int year, int month, Rand random)
+        protected override List<Person> GetBuyers(Rand random)
         {
             return _males;
         }
 
-        protected override List<SellerValues> GetActiveSellers(int year, int month, Rand random)
+        protected override List<List<SellerValue>> GetSellers(Rand random)
         {
-            List<SellerValues> ret = new List<MarketModel<Person, Person>.SellerValues>(_females.Count);
+            var ret = new List<SellerValue>(_females.Count);
             for (int i = 0; i < _females.Count; i++)
             {
-                ret.Add(new SellerValues() { Unit = _females[i], MinimumPrice = 0.0f, AskingPrice = 0.0f });
+                //ret.Add(new SellerValues() { Unit = _females[i], MinimumPrice = 0.0f, AskingPrice = 0.0f });
+                ret.Add(new SellerValue(_females[i], 0f, 0f));
             }
-            return ret;
+            return new List<List<SellerValue>>() { ret };
         }
 
-        protected override float GetOffer(SellerValues seller, Person nextBuyer, int year, int month)
+        protected override void ResolveSale(Person buyer, Person seller, float amount)
         {
-            return 0f;
+            Marry(buyer, seller, _familyRepository);
+        }
+
+        [RunParameter("Choice Set", 10, "The number of people to look at when trying to find a partner.")]
+        public int ChoiceSetSize;
+
+        protected override List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<SellerValue>> sellers)
+        {
+            // Just select some people at random
+            var onlyList = sellers[0];
+            var ret = new List<Bid>(ChoiceSetSize);
+            for (int i = 0; i < ChoiceSetSize; i++)
+            {
+                var selectIndex = Math.Min((int)(rand.NextFloat() * onlyList.Count), onlyList.Count - 1);
+                ret.Add(new Bid(0, selectIndex));
+            }
+            return new List<List<Bid>>(1) { ret };
         }
 
         int MarriagesInYear = 0;
@@ -268,12 +286,6 @@ namespace TMG.Ilute.Model.Demographic
             {
                 return new List<float>() { MarriagesInYear };
             }
-        }
-
-        protected override void ResolveSelection(Person seller, Person buyer)
-        {
-            Marry(seller, buyer, _familyRepository);
-            MarriagesInYear++;
         }
 
         ~MarriageMarket()

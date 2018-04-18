@@ -64,6 +64,7 @@ namespace TMG.Ilute.Model.Utilities
                 if (Writer != null)
                 {
                     UnloadData();
+                    Console.WriteLine("Created a new log!");
                 }
                 Writer = SaveTo == null ? Console.Out : new StreamWriter(SaveTo, Append);
                 Loaded = true;
@@ -111,7 +112,8 @@ namespace TMG.Ilute.Model.Utilities
             {
                 if (Writer != null && SaveTo != null)
                 {
-                    Writer.Dispose();
+                    Writer.Flush();
+                    Writer.Close();
                 }
                 Writer = null;
                 Loaded = false;
