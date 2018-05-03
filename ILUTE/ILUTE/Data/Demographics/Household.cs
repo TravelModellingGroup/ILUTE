@@ -48,6 +48,11 @@ namespace TMG.Ilute.Data.Demographics
         /// </summary>
         public DwellingUnitTenure Tenure { get; set; }
 
+        /// <summary>
+        /// The number of persons contained within the household
+        /// </summary>
+        public int ContainedPersons => Families.Sum(f => f.Persons.Count);
+
         public Household()
         {
             Families = new List<Family>(1);

@@ -39,9 +39,6 @@ namespace TMG.Ilute.Model.Housing
         [SubModelInformation(Required = true, Description = "The model to select the price a household would spend.")]
         public ISelectPriceMonthly<Household, Dwelling> BidModel;
 
-        [SubModelInformation(Required = true, Description = "The model to predict the minimum price allowed for a sale.")]
-        public ISelectSaleValue<Dwelling> MinimumPrices;
-
         [SubModelInformation(Required = true, Description = "The model to predict the asking price for a sale.")]
         public ISelectSaleValue<Dwelling> AskingPrices;
 
@@ -109,7 +106,7 @@ namespace TMG.Ilute.Model.Housing
         public void AfterMonthlyExecute(int currentYear, int month)
         {
             BidModel.AfterMonthlyExecute(currentYear, month);
-            MinimumPrices.AfterMonthlyExecute(currentYear, month);
+            AskingPrices.AfterMonthlyExecute(currentYear, month);
         }
 
         public void AfterYearlyExecute(int currentYear)
@@ -120,25 +117,25 @@ namespace TMG.Ilute.Model.Housing
             }
             _currencyManager = CurrencyManager.GiveData();
             BidModel.AfterYearlyExecute(currentYear);
-            MinimumPrices.AfterYearlyExecute(currentYear);
+            AskingPrices.AfterYearlyExecute(currentYear);
         }
 
         public void BeforeFirstYear(int firstYear)
         {
             BidModel.BeforeFirstYear(firstYear);
-            MinimumPrices.BeforeFirstYear(firstYear);
+            AskingPrices.BeforeFirstYear(firstYear);
         }
 
         public void BeforeMonthlyExecute(int currentYear, int month)
         {
             BidModel.BeforeMonthlyExecute(currentYear, month);
-            MinimumPrices.BeforeMonthlyExecute(currentYear, month);
+            AskingPrices.BeforeMonthlyExecute(currentYear, month);
         }
 
         public void BeforeYearlyExecute(int currentYear)
         {
             BidModel.BeforeYearlyExecute(currentYear);
-            MinimumPrices.BeforeYearlyExecute(currentYear);
+            AskingPrices.BeforeYearlyExecute(currentYear);
             // cleanup the accumulators for statistics
             _boughtDwellings = 0;
             _totalSalePrice = 0;
@@ -155,14 +152,14 @@ namespace TMG.Ilute.Model.Housing
         public void RunFinished(int finalYear)
         {
             BidModel.RunFinished(finalYear);
-            MinimumPrices.RunFinished(finalYear);
+            AskingPrices.RunFinished(finalYear);
         }
 
         [RunParameter("Max Bedrooms", 7, "The maximum number of bedrooms to consider.")]
         public int MaxBedrooms;
 
         private const int DwellingCategories = 5;
-        private const int Detched = 0;
+        private const int Detached = 0;
         private const int Attached = 1;
         private const int SemiDetached = 2;
         private const int ApartmentLow = 3;
@@ -172,8 +169,11 @@ namespace TMG.Ilute.Model.Housing
 
         private List<Dwelling> _monthlyBuyerCurrentDwellings;
 
+        private ConcurrentBag<long> _demandLargerDwelling;
+
         protected override List<Household> GetBuyers(Rand rand)
         {
+            _demandLargerDwelling = new ConcurrentBag<long>();
             try
             {
                 var buyers = new List<Household>();
@@ -208,6 +208,7 @@ namespace TMG.Ilute.Model.Housing
 
         private bool OptIntoMarket(Rand rand, Household hhld)
         {
+            const float nonMoverRatio = 0.95f;
             var dwelling = hhld.Dwelling;
             // 1% chance of increasing the # of employed people in the household
             bool jobIncrease = false;
@@ -258,12 +259,14 @@ namespace TMG.Ilute.Model.Housing
                 probMoving += rand.InvStdNormalCDF() * CHILD_BIRTH_ST_DEV + CHILD_BIRTH;
             }
 
+            if (demandCounter > 0) _demandLargerDwelling.Add(hhld.Id);
+
             probMoving += headAge * (rand.InvStdNormalCDF() * HHLD_HEAD_AGE_ST_DEV + HHLD_HEAD_AGE)
                           + _changeInBIR * (rand.InvStdNormalCDF() * CHANGE_IN_BIR_ST_DEV + CHANGE_IN_BIR)
                           + yearsInDwelling * (rand.InvStdNormalCDF() * DUR_IN_DWELL_ST_DEV + DUR_IN_DWELL)
                           + numbOfJobs * NUM_JOBS
                           // TODO: Build the backend for these parts of the utility function
-                          //+ nonmoverRatio * NON_MOVER_RATIO
+                          + nonMoverRatio * NON_MOVER_RATIO
                           //+ labourForcePartRate * LABOUR_FORCE_PARTN
                           ;
 
@@ -284,6 +287,7 @@ namespace TMG.Ilute.Model.Housing
             }
             // Get all of the empty dwellings
             var dwellings = Repository.GetRepository(DwellingRepository);
+            // Get all of the empty dwellings, dwellings of people currently moving, or households who have already moved.
             var candidates = dwellings.Where(d => d.Exists && (d.Household == null)).Union(_monthlyBuyerCurrentDwellings);
             // sort the candidates into the proper lists
             foreach (var d in candidates)
@@ -296,8 +300,13 @@ namespace TMG.Ilute.Model.Housing
 
         private int ComputeHouseholdCategory(Dwelling d)
         {
-            var offset = Detched;
-            switch (d.Type)
+            return ComputeHouseholdCategory(d.Type, d.Rooms);
+        }
+
+        private int ComputeHouseholdCategory(Dwelling.DwellingType dwellingType, int rooms)
+        {
+            var offset = Detached;
+            switch (dwellingType)
             {
                 case Dwelling.DwellingType.Detched:
                     break;
@@ -314,7 +323,7 @@ namespace TMG.Ilute.Model.Housing
                     offset = ApartmentHigh;
                     break;
             }
-            return MaxBedrooms * offset + Math.Max(Math.Min(MaxBedrooms - 1, d.Rooms), 0);
+            return MaxBedrooms * offset + Math.Max(Math.Min(MaxBedrooms - 1, rooms), 0);
         }
 
         protected override void ResolveSale(Household buyer, Dwelling seller, float transactionPrice)
@@ -334,9 +343,53 @@ namespace TMG.Ilute.Model.Housing
             seller.Value = new Money(transactionPrice, _currentTime);
         }
 
-        protected override List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<SellerValue>> sellers)
+        [RunParameter("Choice Set Size", 10, "The size of the choice set for the buyer for each dwelling class.")]
+        public int ChoiceSetSize;
+
+        protected override List<List<Bid>> SelectSellers(Rand rand, Household buyer, IReadOnlyList<IReadOnlyList<SellerValue>> sellers)
         {
-            throw new NotImplementedException();
+            var ret = InitializeBidSet(sellers);
+            (var minSize, var maxSize) = GetHouseholdBounds(buyer);
+            for (int dwellingType = 0; dwellingType < DwellingCategories; dwellingType++)
+            {
+                for(int rooms = minSize; rooms <= maxSize; rooms++)
+                {
+                    var index = ComputeHouseholdCategory((Dwelling.DwellingType)dwellingType, rooms);
+                    var retRow = ret[index];
+                    var sellerRow = sellers[index];
+                    if(sellerRow.Count < ChoiceSetSize)
+                    {
+                        retRow.AddRange(sellerRow.Select((seller, i) => new Bid(BidModel.GetPrice(buyer, seller.Unit, seller.AskingPrice), i)));
+                        break;
+                    }
+                    var attempts = 0;
+                    while(retRow.Count < ChoiceSetSize && attempts++ < ChoiceSetSize * 2)
+                    {
+                        var sellerIndex = (int)(retRow.Count * rand.NextFloat());
+                        var toCheck = sellerRow[sellerIndex];
+                        var price = BidModel.GetPrice(buyer, toCheck.Unit, toCheck.AskingPrice);
+                        if(price >= toCheck.MinimumPrice)
+                        {
+                            retRow.Add(new Bid(price, sellerIndex));
+                        }
+                    }
+                }
+            }
+            return ret;
+        }
+
+        private (int minSize, int maxSize) GetHouseholdBounds(Household buyer)
+        {
+            int persons = buyer.ContainedPersons;
+            var isDemandingLarger = _demandLargerDwelling.Contains(buyer.Id);
+            // The compute function will take care of the remainders
+            return isDemandingLarger ? (persons, persons + 1) 
+                                     : (persons - 1, persons);
+        }
+
+        private static List<List<Bid>> InitializeBidSet(IReadOnlyList<IReadOnlyList<SellerValue>> sellers)
+        {
+            return sellers.Select(s => new List<Bid>()).ToList();
         }
 
         #region IDisposable Support

@@ -257,7 +257,7 @@ namespace TMG.Ilute.Model.Demographic
         [RunParameter("Choice Set", 10, "The number of people to look at when trying to find a partner.")]
         public int ChoiceSetSize;
 
-        protected override List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<SellerValue>> sellers)
+        protected override List<List<Bid>> SelectSellers(Rand rand, Person buyer, IReadOnlyList<IReadOnlyList<SellerValue>> sellers)
         {
             // Just select some people at random
             var onlyList = sellers[0];

@@ -191,7 +191,7 @@ namespace TMG.Ilute.Model.Utilities
             Parallel.For(0, buyersWithRandomSeed.Count, (int buyerIndex) =>
             {
                 Rand buyerRand = new Rand((uint)(buyersWithRandomSeed[buyerIndex].randomSeed * uint.MaxValue));
-                var ret = SelectSellers(buyerRand, sellers);
+                var ret = SelectSellers(buyerRand, buyersWithRandomSeed[buyerIndex].buyer, sellers);
                 // Record the results
                 for (int typeIndex = 0; typeIndex < ret.Count; ++typeIndex)
                 {
@@ -227,7 +227,7 @@ namespace TMG.Ilute.Model.Utilities
             return sellersBids;
         }
 
-        protected abstract List<List<Bid>> SelectSellers(Rand rand, IReadOnlyList<IReadOnlyList<SellerValue>> sellers);
+        protected abstract List<List<Bid>> SelectSellers(Rand rand, Buyer buyer, IReadOnlyList<IReadOnlyList<SellerValue>> sellers);
 
         private (List<Buyer> buyers, List<List<SellerValue>> sellers) GetBuyersAndSellers(Rand random)
         {

@@ -21,12 +21,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMG.Ilute.Data;
 
 namespace TMG.Ilute
 {
     public interface ISelectPriceMonthly<Buyer,Seller> : IExecuteMonthly
     {
-        float GetPrice(Buyer buyer, Seller seller);
+        float GetPrice(Buyer buyer, Seller seller, float askingPrice);
     }
 
     public interface ISelectSaleValue<Seller> : IExecuteMonthly
