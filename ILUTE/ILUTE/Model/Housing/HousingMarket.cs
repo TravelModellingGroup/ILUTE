@@ -187,7 +187,7 @@ namespace TMG.Ilute.Model.Housing
                         {
                             _monthlyBuyerCurrentDwellings.Add(dwelling);
                         }
-                        if (OptIntoMarket(rand, hhld))
+                        else if (OptIntoMarket(rand, hhld))
                         {
                             _monthlyBuyerCurrentDwellings.Add(dwelling);
                             if (!buyers.Contains(hhld)) buyers.Add(hhld);
