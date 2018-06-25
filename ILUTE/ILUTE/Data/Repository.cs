@@ -75,7 +75,7 @@ namespace TMG.Ilute.Data
 
         public void LoadData()
         {
-            _dependents = DependentResources.Select(repository => repository.AcquireResource<Repository>()).ToArray();
+            _dependents = DependentResources?.Select(repository => repository.AcquireResource<Repository>()).ToArray() ?? new Repository[0];
             Loaded = true;
         }
 
@@ -120,10 +120,18 @@ namespace TMG.Ilute.Data
         /// <summary>
         /// Add a new entry
         /// </summary>
-        /// <param name="data">The information to add to the repository</param>
+        /// <param name="data">The information to add to the repository. Must be non-null!</param>
         /// <returns>The new index assigned for this element</returns>
         public long AddNew(long index, T data)
         {
+            if (data == null)
+            {
+                throw new XTMFRuntimeException(this, "Error trying to add a new element with a null for data.");
+            }
+            if(_dependents == null)
+            {
+                throw new XTMFRuntimeException(this, "The repository was not loaded before trying to add data!");
+            }
             _dataLock.EnterWriteLock();
             Thread.MemoryBarrier();
             data.Id = index;
@@ -131,7 +139,7 @@ namespace TMG.Ilute.Data
             // If the index is equal to or higher than the highest index so far, increase that index
             _highest = Math.Max(index + 1, _highest);
             Thread.MemoryBarrier();
-            for (int i = 0; i < _dependents.Length; i++)
+            for (int i = 0; i < _dependents?.Length; i++)
             {
                 _dependents[i].MakeNew(index);
             }
@@ -409,7 +417,7 @@ namespace TMG.Ilute.Data
 
         private void Dispose(bool managed)
         {
-            if(managed)
+            if (managed)
             {
                 GC.SuppressFinalize(this);
             }

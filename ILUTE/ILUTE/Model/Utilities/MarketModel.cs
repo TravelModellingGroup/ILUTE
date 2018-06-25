@@ -67,25 +67,37 @@ namespace TMG.Ilute.Model.Utilities
             var choiceSets = BuildChoiceSets(random, buyers, sellers);
             for (int iteration = 0; iteration < MaxIterations; ++iteration)
             {
+
                 var successes = buyers.Select(buyer => new List<(int typeIndex, int sellerIndex, float ammount)>()).ToArray();
-                // Get all of the best buyers
-                for (int sellerType = 0; sellerType < choiceSets.Count; ++sellerType)
+                try
                 {
-                    Parallel.For(0, choiceSets[sellerType].Count, (int sellerIndex) =>
+                    // Get all of the best buyers
+                    for (int sellerType = 0; sellerType < choiceSets.Count; ++sellerType)
                     {
-                        var options = choiceSets[sellerType][sellerIndex];
-                        if (options.Count > 0)
+                        Parallel.For(0, choiceSets[sellerType].Count, (int sellerIndex) =>
                         {
-                            var bestBid = options[0];
-                            options.RemoveAt(0);
-                            var buyerList = successes[bestBid.BuyerIndex];
-                            lock (buyerList)
+                            var options = choiceSets[sellerType][sellerIndex];
+                            if (options.Count > 0)
                             {
-                                // The value is the amount the next highest a person would pay.
-                                buyerList.Add((sellerType, sellerIndex, options.Count > 0 ? options[0].Amount : bestBid.Amount));
+                                var bestBid = options[0];
+                                options.RemoveAt(0);
+                                if (bestBid.BuyerIndex < 0 || bestBid.BuyerIndex > successes.Length)
+                                {
+                                    throw new XTMFRuntimeException(this, $"Bad buyer index {bestBid.BuyerIndex}!");
+                                }
+                                var buyerList = successes[bestBid.BuyerIndex];
+                                lock (buyerList)
+                                {
+                                    // The value is the amount the next highest a person would pay.
+                                    buyerList.Add((sellerType, sellerIndex, options.Count > 0 ? options[0].Amount : bestBid.Amount));
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
+                }
+                catch
+                {
+                    throw new XTMFRuntimeException(this, "Error occurred while getting the best buyers!");
                 }
                 // make sure we were able to clear something, otherwise we are done.
                 if (!successes.AsParallel().Any(t => t.Count > 0))
@@ -104,13 +116,13 @@ namespace TMG.Ilute.Model.Utilities
                             break;
                         case 1:
                             // resolve the choice set and clear out the seller from the model
-                            ResolveSale(buyers[buyerIndex], sellers[buyerList[0].typeIndex][buyerList[0].sellerIndex].Unit, buyerList[buyerIndex].ammount);
+                            ResolveSale(buyers[buyerIndex], sellers[buyerList[0].typeIndex][buyerList[0].sellerIndex].Unit, buyerList[0].ammount);
                             choiceSets[buyerList[0].typeIndex][buyerList[0].sellerIndex].Clear();
                             break;
                         default:
                             {
-                                float max = buyerList[0].ammount;
                                 int maxIndex = 0;
+                                float max = buyerList[maxIndex].ammount;
                                 for (int i = 1; i < buyerList.Count; i++)
                                 {
                                     if (buyerList[i].ammount > max
@@ -120,29 +132,105 @@ namespace TMG.Ilute.Model.Utilities
                                         maxIndex = i;
                                     }
                                 }
+                                try
+                                {
+                                    if (buyerIndex < 0 || buyerIndex >= buyers.Count)
+                                    {
+                                        throw new XTMFRuntimeException(this, $"buyerIndex is invalid: {buyerIndex}");
+                                    }
+                                    if (maxIndex >= buyerList.Count)
+                                    {
+                                        throw new XTMFRuntimeException(this, "Found a case where the maxIndex is greater than the buyerList!");
+                                    }
+                                    if (buyerList[maxIndex].typeIndex < 0 || buyerList[maxIndex].typeIndex >= sellers.Count)
+                                    {
+                                        throw new XTMFRuntimeException(this, $"Found a case where the type index is invalid: {buyerList[maxIndex].typeIndex}");
+                                    }
+                                    if (buyerList[maxIndex].sellerIndex < 0 ||
+                                        buyerList[maxIndex].sellerIndex >= sellers[buyerList[maxIndex].typeIndex].Count)
+                                    {
+                                        throw new XTMFRuntimeException(this, $"Found a case where the seller index is invalid: {buyerList[maxIndex].sellerIndex}");
+                                    }
+                                }
+                                catch
+                                {
+                                    throw new XTMFRuntimeException(this, "Error while testing for other errors!");
+                                }
                                 // resolve the choice set and clear out the seller from the model
-                                ResolveSale(buyers[buyerIndex], sellers[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex].Unit, buyerList[buyerIndex].ammount);
-                                choiceSets[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex].Clear();
+                                Buyer buyer1 = default;
+                                Seller unit = default;
+                                float amount = default;
+                                try
+                                {
+                                    buyer1 = buyers[buyerIndex];
+                                }
+                                catch
+                                {
+                                    throw new XTMFRuntimeException(this, "Error computing buyer1");
+                                }
+                                try
+                                {
+                                    unit = sellers[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex].Unit;
+                                }
+                                catch
+                                {
+                                    throw new XTMFRuntimeException(this, "Error computing unit");
+                                }
+                                try
+                                {
+                                    amount = buyerList[maxIndex].ammount;
+                                }
+                                catch
+                                {
+                                    throw new XTMFRuntimeException(this, $"Error computing amount: {buyerIndex}");
+                                }
+                                try
+                                {
+                                    ResolveSale(buyer1, unit, amount);
+                                }
+                                catch
+                                {
+                                    throw new XTMFRuntimeException(this, "Error resolving the sale.");
+                                }
+                                try
+                                {
+                                    choiceSets[buyerList[maxIndex].typeIndex][buyerList[maxIndex].sellerIndex].Clear();
+                                }
+                                catch
+                                {
+                                    throw new XTMFRuntimeException(this, $"Error clearing the choice sets.");
+                                }
                             }
                             break;
                     }
                 }//);
                 // Sweep all of the successful buyers from the choice sets
-                for (int sellerType = 0; sellerType < choiceSets.Count; ++sellerType)
+                try
                 {
-                    Parallel.For(0, choiceSets[sellerType].Count, (int sellerIndex) =>
+                    for (int sellerType = 0; sellerType < choiceSets.Count; ++sellerType)
                     {
-                        var options = choiceSets[sellerType][sellerIndex];
-                        for (int i = 0; i < options.Count; i++)
+                        Parallel.For(0, choiceSets[sellerType].Count, (int sellerIndex) =>
                         {
-                            // if the buyer was successful remove them from the set
-                            // and make sure to reduce our current index
-                            if (successes[options[i].BuyerIndex].Count > 0)
+                            var options = choiceSets[sellerType][sellerIndex];
+                            for (int i = 0; i < options.Count; i++)
                             {
-                                options.RemoveAt(i--);
+                                // if the buyer was successful remove them from the set
+                                // and make sure to reduce our current index
+                                if (options[i].BuyerIndex >= successes.Length)
+                                {
+                                    throw new XTMFRuntimeException(this, "Found a case where the buyer index is greater than the number of sucesses!");
+                                }
+                                if (successes[options[i].BuyerIndex].Count > 0)
+                                {
+                                    options.RemoveAt(i--);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
+                }
+                catch
+                {
+                    throw new XTMFRuntimeException(this, "Error occurred while sweeping the market!");
                 }
             }
         }

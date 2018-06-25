@@ -34,7 +34,7 @@ namespace TMG.Ilute.Model.Utilities
         [SubModelInformation(Required = false, Description = "Inflation rate per year.")]
         public IDataSource<SparseArray<float>> TemperalDataLoader;
 
-        private SparseArray<float> _inflatinoRateByMonth;
+        private SparseArray<float> _inflationRateByMonth;
 
         public bool Loaded { get; set; }
 
@@ -61,7 +61,7 @@ namespace TMG.Ilute.Model.Utilities
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float GetRate(Date date)
         {
-            return _inflatinoRateByMonth[date.Months];
+            return _inflationRateByMonth[date.Months];
         }
 
         public float Progress => 0f;
@@ -75,7 +75,7 @@ namespace TMG.Ilute.Model.Utilities
 
         public void LoadData()
         {
-            _inflatinoRateByMonth = Repository.GetRepository(TemperalDataLoader);
+            _inflationRateByMonth = Repository.GetRepository(TemperalDataLoader);
             Loaded = true;
         }
 
@@ -87,7 +87,7 @@ namespace TMG.Ilute.Model.Utilities
         public void UnloadData()
         {
             Loaded = false;
-            _inflatinoRateByMonth = null;
+            _inflationRateByMonth = null;
         }
     }
 }

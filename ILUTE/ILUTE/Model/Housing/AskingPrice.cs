@@ -28,6 +28,8 @@ namespace TMG.Ilute.Model.Housing
 {
     public sealed class AskingPrice : ISelectSaleValue<Dwelling>
     {
+        public static double ASKING_PRICE_FACTOR_DECREASE = 0.95;
+
         public string Name { get; set; }
 
         public float Progress => 0f;
@@ -61,7 +63,16 @@ namespace TMG.Ilute.Model.Housing
 
         public (float askingPrice, float minimumPrice) GetPrice(Dwelling seller)
         {
-            throw new NotImplementedException();
+            //TODO: Actually calculate how many months the dwelling has been on the market.
+            const int monthsOnMarket = 0;
+            (var askingPrice, var minPrice) = DwellingPrice(seller);
+            return (askingPrice * (float)Math.Pow(ASKING_PRICE_FACTOR_DECREASE, monthsOnMarket), minPrice);
+        }
+
+        private (float, float) DwellingPrice(Dwelling seller)
+        {
+            var ctZone = seller.Zone;
+            return (0f, 0f);
         }
 
         public void RunFinished(int finalYear)

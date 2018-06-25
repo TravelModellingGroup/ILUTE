@@ -111,7 +111,7 @@ namespace TMG.Ilute.Model.Housing
 
         public void AfterYearlyExecute(int currentYear)
         {
-            if(!CurrencyManager.Loaded)
+            if (!CurrencyManager.Loaded)
             {
                 CurrencyManager.LoadData();
             }
@@ -128,6 +128,7 @@ namespace TMG.Ilute.Model.Housing
 
         public void BeforeMonthlyExecute(int currentYear, int month)
         {
+            _monthlyBuyerCurrentDwellings = new List<Dwelling>();
             BidModel.BeforeMonthlyExecute(currentYear, month);
             AskingPrices.BeforeMonthlyExecute(currentYear, month);
         }
@@ -240,20 +241,20 @@ namespace TMG.Ilute.Model.Housing
                 demandCounter++;
                 probMoving += rand.InvStdNormalCDF() + INC_NUM_JOBS_ST_DEV + INC_NUM_JOBS;
             }
-            if(jobDecrease)
+            if (jobDecrease)
             {
                 demandCounter--;
                 probMoving += DEC_NUM_JOBS;
             }
-            if(retirement)
+            if (retirement)
             {
                 probMoving += RETIREMENT_IN_HHLD;
             }
-            if(jobChange)
+            if (jobChange)
             {
                 probMoving += rand.InvStdNormalCDF() * JOB_CHANGE_ST_DEV + JOB_CHANGE;
             }
-            if(newChild)
+            if (newChild)
             {
                 demandCounter++;
                 probMoving += rand.InvStdNormalCDF() * CHILD_BIRTH_ST_DEV + CHILD_BIRTH;
@@ -352,23 +353,27 @@ namespace TMG.Ilute.Model.Housing
             (var minSize, var maxSize) = GetHouseholdBounds(buyer);
             for (int dwellingType = 0; dwellingType < DwellingCategories; dwellingType++)
             {
-                for(int rooms = minSize; rooms <= maxSize; rooms++)
+                for (int rooms = minSize; rooms <= maxSize; rooms++)
                 {
                     var index = ComputeHouseholdCategory((Dwelling.DwellingType)dwellingType, rooms);
                     var retRow = ret[index];
                     var sellerRow = sellers[index];
-                    if(sellerRow.Count < ChoiceSetSize)
+                    if (sellerRow.Count < ChoiceSetSize)
                     {
                         retRow.AddRange(sellerRow.Select((seller, i) => new Bid(BidModel.GetPrice(buyer, seller.Unit, seller.AskingPrice), i)));
                         break;
                     }
                     var attempts = 0;
-                    while(retRow.Count < ChoiceSetSize && attempts++ < ChoiceSetSize * 2)
+                    while (retRow.Count < ChoiceSetSize && attempts++ < ChoiceSetSize * 2)
                     {
                         var sellerIndex = (int)(retRow.Count * rand.NextFloat());
                         var toCheck = sellerRow[sellerIndex];
                         var price = BidModel.GetPrice(buyer, toCheck.Unit, toCheck.AskingPrice);
-                        if(price >= toCheck.MinimumPrice)
+                        if (sellerIndex >= retRow.Count || sellerIndex < 0)
+                        {
+                            throw new XTMFRuntimeException(this, "We found an out of bounds issue when selecting sellers.");
+                        }
+                        if (price >= toCheck.MinimumPrice)
                         {
                             retRow.Add(new Bid(price, sellerIndex));
                         }
@@ -383,7 +388,7 @@ namespace TMG.Ilute.Model.Housing
             int persons = buyer.ContainedPersons;
             var isDemandingLarger = _demandLargerDwelling.Contains(buyer.Id);
             // The compute function will take care of the remainders
-            return isDemandingLarger ? (persons, persons + 1) 
+            return isDemandingLarger ? (persons, persons + 1)
                                      : (persons - 1, persons);
         }
 

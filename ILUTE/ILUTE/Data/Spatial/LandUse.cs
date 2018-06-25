@@ -68,6 +68,7 @@ namespace TMG.Ilute.Data.Spatial
         public void LoadData()
         {
             var data = new Repository<LandUse>();
+            data.LoadData();
             using (var reader = new CsvReader(LUFileLocation, true))
             {
                 while (reader.LoadLine(out int columns))
