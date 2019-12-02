@@ -63,11 +63,9 @@ namespace TMG.Ilute.Model.Utilities
              * Repeat until all sellers with bidders are resolved or max iterations
              */
             (var buyers, var sellers) = GetBuyersAndSellers(random);
-            Console.WriteLine($"Buyers {buyers.Count} -> Sellers {sellers.Count}");
             var choiceSets = BuildChoiceSets(random, buyers, sellers);
             for (int iteration = 0; iteration < MaxIterations; ++iteration)
             {
-
                 var successes = buyers.Select(buyer => new List<(int typeIndex, int sellerIndex, float ammount)>()).ToArray();
                 try
                 {

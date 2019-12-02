@@ -128,6 +128,8 @@ namespace TMG.Ilute.Model.Housing
 
         public void BeforeMonthlyExecute(int currentYear, int month)
         {
+            _currentYear = currentYear;
+            _currentMonth = month;
             _monthlyBuyerCurrentDwellings = new List<Dwelling>();
             BidModel.BeforeMonthlyExecute(currentYear, month);
             AskingPrices.BeforeMonthlyExecute(currentYear, month);

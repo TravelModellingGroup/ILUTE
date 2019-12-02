@@ -212,8 +212,6 @@ namespace TMG.Ilute.Model.Demographic
             females = localFemales;
         }
 
-
-
         public void RunFinished(int finalYear)
         {
         }

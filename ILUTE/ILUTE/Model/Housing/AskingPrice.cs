@@ -154,7 +154,10 @@ namespace TMG.Ilute.Model.Housing
                     averageSalePriceForThisType = 0 / 1000;
                     break;
             }
-            var landUse = _landUse[ctZone];
+            if(!_landUse.TryGet(ctZone, out var landUse))
+            {
+                throw new XTMFRuntimeException(this, $"We were not able to find land use information for the zone {ctZone}");
+            }
             double price = 4.0312
                 + 0.07625 * seller.Rooms
                 - 0.0067 * avgDistToSubwayKM
