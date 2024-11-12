@@ -199,3 +199,4 @@ FakesAssemblies/
 *.dll
 *.iobj
 *.ipdb
+/ILUTE/ILUTE/Properties/launchSettings.json
