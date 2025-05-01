@@ -3,22 +3,27 @@
     <TargetFramework>net9.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>TMG.Ilute</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
     <AssemblyTitle>ILUTE</AssemblyTitle>
     <Company>University of Toronto</Company>
     <Product>ILUTE</Product>
-    <Copyright>Copyright ©  2016</Copyright>
+    <Copyright>Copyright ©  2025</Copyright>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <BaseOutputPath>..\..\..\XTMF-Dev\Modules</BaseOutputPath>
 	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	  <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  <OutputPath>..\..\..\XTMF-Dev\Modules\</OutputPath>
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  <LangVersion>latest</LangVersion>
+	  <Optimize>True</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Optimize>false</Optimize>
+    <Optimize>True</Optimize>
     <OutputPath>..\..\..\XTMF-Dev\Modules\</OutputPath>
     <DebugSymbols>true</DebugSymbols>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -55,5 +60,10 @@
     <Reference Include="XTMFInterfaces">
       <HintPath>..\..\..\XTMF-Dev\Modules\XTMFInterfaces.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="IluteHPC.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
